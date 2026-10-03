@@ -65,7 +65,7 @@ describe("liveAudioGraph", () => {
 
     const element = document.createElement("audio");
     const first = attachLiveAnalyser(element, options);
-    const second = attachLiveAnalyser(element, options);
+    attachLiveAnalyser(element, options);
     const context = webAudio.contexts[0]!;
     const firstAnalyser = context.analysers[0]!;
     const secondAnalyser = context.analysers[1]!;

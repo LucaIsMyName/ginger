@@ -372,7 +372,7 @@ const tracks = [
 function CrossfadeReadout() {
   const { status, error } = useGingerCrossfade({
     enabled: true,
-    durationMs: 1200,
+    duration: 1.2,
   });
   return (
     <div>

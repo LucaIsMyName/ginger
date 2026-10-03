@@ -37,23 +37,23 @@ Use this document to keep coding decisions consistent across sessions and contri
 
 ## Project Metadata
 
-- App name: ---
-- Primary runtime: ---
-- Deployment target: ---
-- Package manager: NPM
-- Main data sources: ---
+- App name: `@lucaismyname/ginger` — headless React audio player primitive
+- Primary runtime: Browser (ESM + CJS dual build via Vite lib mode)
+- Deployment target: npm registry (`npm publish` from `packages/ginger/`)
+- Package manager: NPM (workspaces: `packages/*`, `apps/*`)
+- Main data sources: `<audio>` element events, Web Audio API, BroadcastChannel (remote), Chromecast SDK (cast)
 
 ### Critical Flows
 
-- User signup/login: ---
-- Payment/billing: ---
-- Core CRUD flow: ---
+- User signup/login: N/A (library, no auth)
+- Payment/billing: N/A
+- Core CRUD flow: `GingerProvider` reducer → `GingerPlayer` `<audio>` sync → subpath hooks (EQ, spatial, crossfade, waveform, transcript, remote, cast)
 
 ### Non-Negotiables
 
-- Performance budget: --- 
-- Security constraints: ---
-- Browser/platform support: ---
+- Performance budget: bundle size CI gate enforced in `packages/ginger/scripts/check-bundle-size.mjs`; all subpaths are tree-shakeable via `sideEffects: false`
+- Security constraints: no secrets or credentials; audio src URLs are user-supplied; CORS handling delegated to consumer
+- Browser/platform support: evergreen browsers with Web Audio API; graceful SSR (no `window` access at module level)
 
 ---
 

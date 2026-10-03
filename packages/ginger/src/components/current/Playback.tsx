@@ -7,7 +7,13 @@ export type PlaybackStateProps = DisplayBaseProps & {
   children?: (value: PlaybackUiState, state: GingerState) => ReactNode;
 };
 
-export function PlaybackState({ className, style, fallback, empty, children }: PlaybackStateProps) {
+export function PlaybackState({
+  className,
+  style,
+  fallback: _fallback,
+  empty: _empty,
+  children,
+}: PlaybackStateProps) {
   const state = useGingerState();
   const value = derivePlaybackUiState(state);
   if (children)

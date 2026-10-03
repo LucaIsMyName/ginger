@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { Next, PlayPause, Previous } from "../components/controls/Controls";
 import { Artist, Title } from "../components/current/texts";
 import { Ginger } from "../ginger";

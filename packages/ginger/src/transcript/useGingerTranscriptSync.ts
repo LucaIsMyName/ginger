@@ -85,7 +85,7 @@ export function useGingerTranscriptSync(
   return {
     cues,
     activeIndex,
-    activeCue: activeIndex >= 0 ? (cues[activeIndex] ?? null) : null,
+    activeCue: activeCues.length > 0 ? (activeCues[activeCues.length - 1] ?? null) : null,
     activeCues,
   };
 }
