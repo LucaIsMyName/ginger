@@ -1,4 +1,4 @@
-export const NPM_CMD = "npm install @lucaismyname/ginger@latest";
+export const NPM_CMD = "npm i @lucaismyname/ginger@latest";
 export const NPM_URL = "https://www.npmjs.com/package/@lucaismyname/ginger";
 export const REPO_URL = "https://github.com/lucaismyname/ginger";
 /** Author / project link shown in the landing “Links” row. */

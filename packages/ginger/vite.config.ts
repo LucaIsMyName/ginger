@@ -38,6 +38,7 @@ export default defineConfig({
         "remote/index": resolve(__dirname, "src/remote/index.ts"),
         "cast/index": resolve(__dirname, "src/cast/index.ts"),
         "crossfade/index": resolve(__dirname, "src/crossfade/index.ts"),
+        "tts/index": resolve(__dirname, "src/tts/index.ts"),
         "devtools/index": resolve(__dirname, "src/devtools/index.ts"),
       },
       name: "Ginger",

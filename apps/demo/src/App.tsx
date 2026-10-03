@@ -13,6 +13,7 @@ import { PodcastTimeline } from "./examples/PodcastTimeline";
 import { SingleTrack } from "./examples/SingleTrack";
 import { SpatialAudioDemo } from "./examples/SpatialAudioDemo";
 import { SpotifyMini } from "./examples/SpotifyMini";
+import { TTSDemo } from "./examples/TTSDemo";
 import { ThemedCssVars } from "./examples/ThemedCssVars";
 import { TranscriptDemo } from "./examples/TranscriptDemo";
 import { UnstyledShowcase } from "./examples/UnstyledShowcase";
@@ -34,6 +35,7 @@ const examples = [
   { id: "waveform-file", label: "Waveform (file peaks)", Component: FilePeaksWaveform },
   { id: "spatial", label: "Spatial audio", Component: SpatialAudioDemo },
   { id: "equalizer", label: "Equalizer", Component: EqualizerDemo },
+  { id: "tts", label: "Text-to-Speech (TTS)", Component: TTSDemo },
   { id: "transcript", label: "Transcript (SRT)", Component: TranscriptDemo },
   { id: "podcast", label: "Podcast timeline", Component: PodcastTimeline },
   { id: "glass", label: "Glassmorphism deck", Component: GlassmorphismDeck },
