@@ -44,7 +44,7 @@ export function CodeTooltip({
       <div className="absolute left-8 top-1 h-3 w-3 rotate-45 border-l border-t border-zinc-300 bg-zinc-100/95 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/95" />
       <div className="translate-y-1 rounded-lg border border-zinc-300 bg-zinc-50/75 p-3 shadow-xl shadow-black/20 backdrop-blur-sm transition duration-150 ease-out motion-reduce:translate-y-0 motion-reduce:transition-none group-hover:translate-y-0 group-focus-within:translate-y-0 dark:border-zinc-700 dark:bg-zinc-900/75">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="flex items-center gap-2 font-pixel text-[12px] tracking-wide text-orange-500 dark:text-orange-400">
+          <p className="flex items-center gap-2 font-pixel text-[12px] tracking-wide text-black dark:text-white">
             <Rocket className="inline-block h-[0.95em] w-[0.95em] align-[-0.12em] text-orange-400/70 dark:text-orange-500/70" />{" "}
             Quick Start
           </p>
