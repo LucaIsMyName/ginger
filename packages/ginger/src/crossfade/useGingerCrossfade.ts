@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useEndedSuppressionStore } from "../context/EndedSuppressionContext";
 import { useGingerMedia, useGingerPlayback } from "../context/GingerSplitContexts";
 import { computeEndedTransition } from "../core/transitions";
-import { beginEndedSuppression, clearEndedSuppression } from "../internal/suppressNaturalEnded";
 import {
   type CrossfadeCurve,
   type CrossfadeGraph,
@@ -106,6 +106,7 @@ export function useGingerCrossfade(
   const { tracks, currentIndex, isPaused, repeatMode, playbackMode, dispatch } =
     useGingerPlayback();
   const { currentTime, duration: trackDuration, audioRef, muted, volume } = useGingerMedia();
+  const endedSuppression = useEndedSuppressionStore();
 
   const [isCrossfading, setIsCrossfading] = useState(false);
   const [crossfadeProgress, setCrossfadeProgress] = useState(0);
@@ -121,12 +122,12 @@ export function useGingerCrossfade(
     cancelAnimationFrame(session.rafId);
     teardownCrossfadeGraph(session.graph);
     session.releaseEnded();
-    clearEndedSuppression();
+    endedSuppression.clearEndedSuppression();
     releaseIncoming(session.incomingAudio);
     sessionRef.current = null;
     setIsCrossfading(false);
     setCrossfadeProgress(0);
-  }, []);
+  }, [endedSuppression]);
 
   // Abort if the user pauses or manually changes the track mid-fade.
   // A committed session already advanced the queue; do not tear that down.
@@ -225,7 +226,7 @@ export function useGingerCrossfade(
         return;
       }
 
-      const releaseEnded = beginEndedSuppression(mainEl);
+      const releaseEnded = endedSuppression.beginEndedSuppression(mainEl);
 
       void graph.context.resume();
 
@@ -292,7 +293,7 @@ export function useGingerCrossfade(
     return () => {
       if (pollId != null) clearInterval(pollId);
     };
-  }, [enabled, isPaused, duration, curve, crossOrigin, audioRef, dispatch]);
+  }, [enabled, isPaused, duration, curve, crossOrigin, audioRef, dispatch, endedSuppression]);
 
   return { isCrossfading, crossfadeProgress, error };
 }

@@ -25,6 +25,24 @@ The TypeDoc build uses [`typedoc.json`](../typedoc.json), which points its `read
 | `@lucaismyname/ginger/devtools` | `GingerDevtools` overlay for debugging and controlling players (multi-provider aware) |
 | `@lucaismyname/ginger/experimental-gapless` | Environment capability probe (single-`<audio>` playback unchanged) |
 
+## Subpath API patterns
+
+| Subpath | Notes |
+|---------|--------|
+| `./equalizer`, `./spatial`, `./effects` | Feature hooks with optional `enabled`; shared processing slot order |
+| `./crossfade` | Hook + graph helpers; per-provider ended suppression |
+| `./remote` | BroadcastChannel leader/follower; see security section in root README |
+| `./cast` | Session bridge; user-supplied media URLs |
+| `./waveform` | `fetch`-based analysis; user-supplied URLs |
+
+## Security and trust
+
+Ginger does not validate `fileUrl` values or remote `INIT` snapshots in production. Integrators should allowlist media origins, use CSP, and treat `@lucaismyname/ginger/remote` as same-origin trusted tabs only. Details: [README — Security and trust boundaries](../README.md#security-and-trust-boundaries).
+
+## Semver and compatibility
+
+Public API changes follow semver: **optional** new `GingerProviderProps` fields and bug fixes ship in patch/minor releases; removing or renaming exports requires a major release. Re-exported helpers (`derivePlaybackUiState`, `parseLrc`) are part of the stable surface.
+
 ## Narrative reference
 
 - Release history: [`CHANGELOG.md`](../CHANGELOG.md)

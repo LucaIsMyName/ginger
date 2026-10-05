@@ -9,7 +9,6 @@ import {
   useMemo,
   useReducer,
   useRef,
-  useState,
 } from "react";
 import { GingerDeclarativeMergeProvider } from "../components/tracks/GingerDeclarativeMergeContext";
 import {
@@ -18,19 +17,18 @@ import {
   createInitialState,
   gingerReducer,
 } from "../core/playbackReducer";
-import { trackIdentity } from "../core/queue";
 import { computeEndedTransition } from "../core/transitions";
 import { derivePlaybackUiState } from "../internal/selectors";
 import { useMediaSessionBridge } from "../media/useMediaSession";
 import type {
   GingerInitPayload,
   GingerProviderProps,
-  GingerRetryConfig,
   PlaybackMode,
   PlaylistMeta,
   RepeatMode,
   Track,
 } from "../types";
+import { EndedSuppressionProvider } from "./EndedSuppressionContext";
 import { GingerContext, type GingerContextValue } from "./GingerContext";
 import { GingerLocaleProvider } from "./GingerLocaleContext";
 import {
@@ -43,17 +41,13 @@ import {
   GingerTimeContext,
   type GingerTimeContextValue,
 } from "./GingerSplitContexts";
+import { useGingerDevtoolsRegistration } from "./hooks/useGingerDevtoolsRegistration";
+import { useGingerMediaRetry } from "./hooks/useGingerMediaRetry";
+import { useGingerPersistence } from "./hooks/useGingerPersistence";
+import { useGingerPlayPauseEffect } from "./hooks/useGingerPlayPauseEffect";
+import { useGingerResumeOnTrackChange } from "./hooks/useGingerResumeOnTrackChange";
 
 const GINGER_FOCUS_CSS = `[data-ginger-root] :where(button, [role="slider"], input[type="range"], select):focus-visible{outline:none;box-shadow:var(--ginger-focus-ring,0 0 0 2px rgba(59,130,246,.45))}`;
-
-/** Dev-only logging without a Node `process` global. Bundlers may still define it at runtime. */
-function isDevEnvironment(): boolean {
-  const nodeEnv =
-    typeof globalThis !== "undefined" && "process" in globalThis
-      ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
-      : undefined;
-  return nodeEnv != null && nodeEnv !== "production";
-}
 
 const defaultProviderStyle: CSSProperties = {
   ["--ginger-primary-color" as string]: "#111827",
@@ -86,6 +80,7 @@ export function GingerProvider({
   beforePlay,
   onPlayBlocked,
   retryOnError,
+  onRetryExhausted,
   persistence,
   hydrateOnMount = false,
   resumeOnTrackChange = false,
@@ -192,60 +187,13 @@ export function GingerProvider({
     if (state.errorMessage) onError?.(state.errorMessage);
   }, [state.errorMessage, onError]);
 
-  const retryCountRef = useRef(0);
-  const retryTrackUrlRef = useRef<string | undefined>(undefined);
-  const retryConfig: GingerRetryConfig | null = retryOnError
-    ? typeof retryOnError === "object"
-      ? retryOnError
-      : {}
-    : null;
-  const retryMaxRetries = retryConfig?.maxRetries ?? 3;
-  const retryDelayMs = retryConfig?.delayMs ?? 1500;
-  const retryableErrors = retryConfig?.retryableErrors ?? ["MEDIA_ERR_NETWORK"];
-  const retrySkipOnUnrecoverable = retryConfig?.skipOnUnrecoverable ?? false;
-
-  useEffect(() => {
-    const trackUrl = state.tracks[state.currentIndex]?.fileUrl;
-    if (retryTrackUrlRef.current !== trackUrl) {
-      retryCountRef.current = 0;
-      retryTrackUrlRef.current = trackUrl;
-    }
-  }, [state.currentIndex, state.tracks]);
-
-  useEffect(() => {
-    if (!retryConfig || !state.errorMessage) return;
-
-    const isRetryable = retryableErrors.some((code) => state.errorMessage!.includes(code));
-
-    if (!isRetryable) {
-      if (retrySkipOnUnrecoverable && state.tracks.length > 1) {
-        const timer = setTimeout(() => dispatch({ type: "NEXT" }), 500);
-        return () => clearTimeout(timer);
-      }
-      return;
-    }
-
-    if (retryCountRef.current >= retryMaxRetries) return;
-
-    const attempt = retryCountRef.current;
-    const delay = retryDelayMs * 2 ** attempt;
-    const timer = setTimeout(() => {
-      retryCountRef.current = attempt + 1;
-      const el = audioRef.current;
-      if (!el) return;
-      el.load();
-      dispatch({ type: "PLAY" });
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [
-    retryConfig,
-    retryMaxRetries,
-    retryDelayMs,
-    retryableErrors,
-    retrySkipOnUnrecoverable,
-    state.errorMessage,
-    state.tracks.length,
-  ]);
+  useGingerMediaRetry({
+    retryOnError,
+    state,
+    dispatch,
+    audioRef,
+    onRetryExhausted,
+  });
 
   const prevPausedRef = useRef<boolean | undefined>(undefined);
   useEffect(() => {
@@ -411,151 +359,39 @@ export function GingerProvider({
     dispatch({ type: "INIT", payload });
   }, []);
 
-  const [persistenceReady, setPersistenceReady] = useState(() => !hydrateOnMount || !persistence);
-
-  useEffect(() => {
-    if (!persistence || !hydrateOnMount) return;
-    try {
-      const volume = persistence.get("ginger:volume");
-      const muted = persistence.get("ginger:muted");
-      const playbackRate = persistence.get("ginger:playbackRate");
-      const repeatMode = persistence.get("ginger:repeatMode");
-      const currentIndex = persistence.get("ginger:currentIndex");
-      const p = latestInitRef.current;
-      dispatch({
-        type: "INIT",
-        payload: {
-          tracks: p.tracks,
-          playlistMeta: p.playlistMeta,
-          isPaused: p.isPaused,
-          isShuffled: p.isShuffled,
-          playbackMode: p.playbackMode,
-          currentIndex: typeof currentIndex === "number" ? currentIndex : p.currentIndex,
-          repeatMode:
-            repeatMode === "off" || repeatMode === "all" || repeatMode === "one"
-              ? repeatMode
-              : p.repeatMode,
-          volume: typeof volume === "number" ? volume : p.volume,
-          muted: typeof muted === "boolean" ? muted : p.muted,
-          playbackRate: typeof playbackRate === "number" ? playbackRate : p.playbackRate,
-        },
-      });
-    } catch (e) {
-      if (isDevEnvironment()) {
-        console.warn("[@lucaismyname/ginger] persistence.get() threw during hydration:", e);
-      }
-    } finally {
-      setPersistenceReady(true);
-    }
-  }, [hydrateOnMount, persistence]);
-
-  useEffect(() => {
-    if (!persistence || !persistenceReady) return;
-    try {
-      persistence.set("ginger:volume", state.volume);
-      persistence.set("ginger:muted", state.muted);
-      persistence.set("ginger:playbackRate", state.playbackRate);
-      persistence.set("ginger:repeatMode", state.repeatMode);
-      persistence.set("ginger:currentIndex", state.currentIndex);
-    } catch (e) {
-      if (isDevEnvironment()) {
-        console.warn("[@lucaismyname/ginger] persistence.set() threw:", e);
-      }
-    }
-  }, [
+  useGingerPersistence({
     persistence,
-    persistenceReady,
-    state.volume,
-    state.muted,
-    state.playbackRate,
-    state.repeatMode,
-    state.currentIndex,
-  ]);
-
-  useEffect(() => {
-    if (!persistence || !resumeOnTrackChange) return;
-    const track = state.tracks[state.currentIndex];
-    if (!track) return;
-    const key = `ginger:resume:${trackIdentity(track)}`;
-    try {
-      const saved = persistence.get(key);
-      if (typeof saved === "number" && Number.isFinite(saved)) {
-        seek(saved);
-      }
-    } catch (e) {
-      if (isDevEnvironment()) {
-        console.warn("[@lucaismyname/ginger] persistence.get() threw during resume:", e);
-      }
-    }
-  }, [persistence, resumeOnTrackChange, state.currentIndex, state.tracks, seek]);
-
-  useEffect(() => {
-    if (!persistence || !resumeOnTrackChange) return;
-    const id = setInterval(() => {
-      const s = stateRef.current;
-      const track = s.tracks[s.currentIndex];
-      if (!track || !(s.currentTime >= 0)) return;
-      const key = `ginger:resume:${trackIdentity(track)}`;
-      try {
-        persistence.set(key, s.currentTime);
-      } catch (e) {
-        if (isDevEnvironment()) {
-          console.warn("[@lucaismyname/ginger] persistence.set() threw during resume save:", e);
-        }
-      }
-    }, 5000);
-    return () => clearInterval(id);
-  }, [persistence, resumeOnTrackChange]);
+    hydrateOnMount,
+    latestInitRef,
+    dispatch,
+    currentIndex: state.currentIndex,
+    volume: state.volume,
+    muted: state.muted,
+    playbackRate: state.playbackRate,
+    repeatMode: state.repeatMode,
+  });
 
   const currentUrl = state.tracks[state.currentIndex]?.fileUrl;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `currentUrl` cancels in-flight play when the active track/source changes; not implied by `state.isPaused` alone.
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    if (state.isPaused) {
-      el.pause();
-      return;
-    }
-    // Guard against replay loops when a stale "play" state lands after queue-end.
-    if (el.ended && computeEndedTransition(stateRef.current).kind === "stop") {
-      dispatch({ type: "PAUSE" });
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      if (beforePlay) {
-        let allowed = false;
-        try {
-          allowed = await beforePlay();
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "beforePlay rejected";
-          dispatch({ type: "MEDIA_ERROR", payload: { message } });
-          return;
-        }
-        if (!allowed) {
-          if (!cancelled) {
-            dispatch({ type: "PAUSE" });
-            onPlayBlocked?.();
-          }
-          return;
-        }
-      }
-      if (cancelled) return;
-      void el.play().catch((e: unknown) => {
-        const msg =
-          e instanceof Error
-            ? e.message
-            : typeof e === "string"
-              ? e
-              : "Playback failed (e.g. autoplay blocked or unavailable source)";
-        dispatch({ type: "MEDIA_ERROR", payload: { message: msg } });
-      });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [beforePlay, currentUrl, onPlayBlocked, state.isPaused]);
+  useGingerResumeOnTrackChange({
+    persistence,
+    resumeOnTrackChange,
+    tracks: state.tracks,
+    currentIndex: state.currentIndex,
+    duration: state.duration,
+    currentTime: state.currentTime,
+    seek,
+  });
+
+  useGingerPlayPauseEffect({
+    audioRef,
+    state,
+    stateRef,
+    dispatch,
+    currentUrl,
+    beforePlay,
+    onPlayBlocked,
+  });
 
   const notifyEnded = useCallback(() => {
     const transition = computeEndedTransition(stateRef.current);
@@ -808,82 +644,28 @@ export function GingerProvider({
     [className, mergedStyle, playbackUi, providerDir],
   );
 
-  // --- Devtools auto-registration (zero-cost when devtools not loaded) ---
-  const providerIdRef = useRef<string | null>(null);
-  const devtoolsActionsRef = useRef({
-    play,
-    pause,
-    togglePlayPause,
-    next,
-    prev,
-    seek,
-    setVolume,
-    setMuted,
-    toggleMute,
-    setPlaybackRate,
-    setRepeatMode,
-    cycleRepeat,
-    toggleShuffle,
-    playTrackAt,
-    setPlaybackMode,
+  useGingerDevtoolsRegistration({
+    debugLabel,
+    stateRef,
+    audioRef,
+    actions: {
+      play,
+      pause,
+      togglePlayPause,
+      next,
+      prev,
+      seek,
+      setVolume,
+      setMuted,
+      toggleMute,
+      setPlaybackRate,
+      setRepeatMode,
+      cycleRepeat,
+      toggleShuffle,
+      playTrackAt,
+      setPlaybackMode,
+    },
   });
-  devtoolsActionsRef.current = {
-    play,
-    pause,
-    togglePlayPause,
-    next,
-    prev,
-    seek,
-    setVolume,
-    setMuted,
-    toggleMute,
-    setPlaybackRate,
-    setRepeatMode,
-    cycleRepeat,
-    toggleShuffle,
-    playTrackAt,
-    setPlaybackMode,
-  };
-
-  useEffect(() => {
-    const reg =
-      typeof window !== "undefined"
-        ? (window as unknown as Record<string, unknown>).__GINGER_DEVTOOLS__
-        : null;
-    if (!reg || typeof (reg as { register?: unknown }).register !== "function") return;
-    const id =
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `ginger-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    providerIdRef.current = id;
-    (reg as { register: (id: string, p: Record<string, unknown>) => void }).register(id, {
-      label: debugLabel,
-      state: stateRef.current,
-      actions: devtoolsActionsRef.current,
-      audioSrc: audioRef.current?.src ?? null,
-    });
-    return () => {
-      (reg as { unregister: (id: string) => void }).unregister(id);
-      providerIdRef.current = null;
-    };
-  }, [debugLabel]);
-
-  useEffect(() => {
-    const reg =
-      typeof window !== "undefined"
-        ? (window as unknown as Record<string, unknown>).__GINGER_DEVTOOLS__
-        : null;
-    if (!reg || typeof (reg as { update?: unknown }).update !== "function") return;
-    const timer = setInterval(() => {
-      const pid = providerIdRef.current;
-      if (!pid) return;
-      (reg as { update: (id: string, p: Record<string, unknown>) => void }).update(pid, {
-        state: stateRef.current,
-        audioSrc: audioRef.current?.src ?? null,
-      });
-    }, 250);
-    return () => clearInterval(timer);
-  }, []);
 
   const shell = useMemo(() => {
     if (!asChild) {
@@ -925,20 +707,22 @@ export function GingerProvider({
   );
 
   return (
-    <GingerLocaleProvider locale={locale}>
-      <GingerDeclarativeMergeProvider value={declarativeMergeValue}>
-        <GingerPlaybackContext.Provider value={playbackValue}>
-          <GingerTimeContext.Provider value={timeValue}>
-            <GingerMediaControlContext.Provider value={mediaControlValue}>
-              <GingerMediaContext.Provider value={mediaValue}>
-                <GingerContext.Provider value={value}>{shell}</GingerContext.Provider>
-              </GingerMediaContext.Provider>
-            </GingerMediaControlContext.Provider>
-          </GingerTimeContext.Provider>
-        </GingerPlaybackContext.Provider>
-      </GingerDeclarativeMergeProvider>
-      <style>{GINGER_FOCUS_CSS}</style>
-    </GingerLocaleProvider>
+    <EndedSuppressionProvider>
+      <GingerLocaleProvider locale={locale}>
+        <GingerDeclarativeMergeProvider value={declarativeMergeValue}>
+          <GingerPlaybackContext.Provider value={playbackValue}>
+            <GingerTimeContext.Provider value={timeValue}>
+              <GingerMediaControlContext.Provider value={mediaControlValue}>
+                <GingerMediaContext.Provider value={mediaValue}>
+                  <GingerContext.Provider value={value}>{shell}</GingerContext.Provider>
+                </GingerMediaContext.Provider>
+              </GingerMediaControlContext.Provider>
+            </GingerTimeContext.Provider>
+          </GingerPlaybackContext.Provider>
+        </GingerDeclarativeMergeProvider>
+        <style>{GINGER_FOCUS_CSS}</style>
+      </GingerLocaleProvider>
+    </EndedSuppressionProvider>
   );
 }
 

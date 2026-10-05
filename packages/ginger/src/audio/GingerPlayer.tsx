@@ -1,6 +1,6 @@
 import { type AudioHTMLAttributes, type CSSProperties, useEffect, useRef, useState } from "react";
+import { useOptionalEndedSuppressionStore } from "../context/EndedSuppressionContext";
 import { useGingerContext } from "../context/GingerContext";
-import { shouldIgnoreEnded } from "../internal/suppressNaturalEnded";
 
 export type GingerPlayerProps = {
   className?: string;
@@ -24,6 +24,7 @@ export function GingerPlayer({
   respectReducedMotion = false,
 }: GingerPlayerProps) {
   const { audioRef, dispatch, state, notifyEnded } = useGingerContext();
+  const endedSuppression = useOptionalEndedSuppressionStore();
   const url = state.tracks[state.currentIndex]?.fileUrl ?? "";
   const lastTimeSnapshotRef = useRef({
     currentTime: -1,
@@ -120,7 +121,7 @@ export function GingerPlayer({
       onSeeking={(e) => syncTime(e.currentTarget, true)}
       onSeeked={(e) => syncTime(e.currentTarget, true)}
       onEnded={(e) => {
-        if (shouldIgnoreEnded(e.currentTarget)) return;
+        if (endedSuppression?.shouldIgnoreEnded(e.currentTarget)) return;
         notifyEnded();
       }}
       onPlaying={() => dispatch({ type: "MEDIA_CANPLAY" })}

@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">41.66% </span>
+                <span class="strong">35.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/12</span>
+                <span class='fraction'>5/14</span>
             </div>
         
             
@@ -118,15 +118,46 @@
 <a name='L53'></a><a href='#L53'>53</a>
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
-<a name='L56'></a><a href='#L56'>56</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -141,6 +172,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -172,16 +207,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { CSSProperties } from "react";
+import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import type { DisplayBaseProps } from "../../types";
 import { createTextDisplay } from "../current/createTextDisplay";
-import { useGingerState } from "../../context/GingerSplitContexts";
 &nbsp;
 export const Title = createTextDisplay(<span class="fstat-no" title="function not covered" >"Ginger.Queue.Title", (s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.title);</span>
 export const Subtitle = createTextDisplay(<span class="fstat-no" title="function not covered" >"Ginger.Queue.Subtitle", (s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.subtitle);</span>
-export const Description = createTextDisplay(<span class="fstat-no" title="function not covered" >"Ginger.Queue.Description", (s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.description);</span>
-export const Copyright = createTextDisplay(<span class="fstat-no" title="function not covered" >"Ginger.Queue.Copyright", (s</span>) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.copyright);</span>
+export const Description = createTextDisplay(
+<span class="fstat-no" title="function not covered" >  "Ginger.Queue.Description",</span>
+  (s) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.description,</span>
+);
+export const Copyright = createTextDisplay(
+<span class="fstat-no" title="function not covered" >  "Ginger.Queue.Copyright",</span>
+  (s) =&gt; <span class="cstat-no" title="statement not covered" >s.playlistMeta?.copyright,</span>
+);
 &nbsp;
 export type QueueArtworkProps = DisplayBaseProps &amp; {
   /** Remove default wrapper/image styles for fully custom layout. */
@@ -189,16 +231,28 @@ export type QueueArtworkProps = DisplayBaseProps &amp; {
   imgStyle?: CSSProperties;
 };
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >Artwork({</span> className, style, fallback, empty, unstyled = <span class="branch-0 cbranch-no" title="branch not covered" >false, i</span>mgStyle }: QueueArtworkProps) {
-  const <span class="cstat-no" title="statement not covered" >state = useGingerState();</span>
+export function <span class="fstat-no" title="function not covered" >Artwork({</span>
+  className,
+  style,
+  fallback,
+  empty,
+  unstyled = <span class="branch-0 cbranch-no" title="branch not covered" >false,</span>
+  imgStyle,
+}: QueueArtworkProps) {
+  const <span class="cstat-no" title="statement not covered" >state = useGingerMetadataState();</span>
   const src = <span class="cstat-no" title="statement not covered" >state.playlistMeta?.artworkUrl;</span>
 <span class="cstat-no" title="statement not covered" >  if (!src) {</span>
     const node = <span class="cstat-no" title="statement not covered" >empty ?? fallback ?? null;</span>
-<span class="cstat-no" title="statement not covered" >    return node ? &lt;span className={className} style={style}&gt;{node}&lt;/span&gt; : null;</span>
+<span class="cstat-no" title="statement not covered" >    return node ? (</span>
+      &lt;span data-ginger-component="Artwork" className={className} style={style}&gt;
+        {node}
+      &lt;/span&gt;
+    ) : null;
   }
   const alt = <span class="cstat-no" title="statement not covered" >state.playlistMeta?.title ?? "Playlist artwork";</span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
     &lt;span
+      data-ginger-component="Artwork"
       className={className}
       style={
         unstyled
@@ -235,7 +289,7 @@ Artwork.displayName = "Ginger.Queue.Artwork";
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T11:12:07.006Z
+                at 2026-10-05T08:50:50.925Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

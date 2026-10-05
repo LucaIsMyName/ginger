@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Next, PlayPause, Previous } from "../components/controls/Controls";
 import { Artist, Title } from "../components/current/texts";
 import { Ginger } from "../ginger";
@@ -131,5 +131,25 @@ describe("GingerProvider integration", () => {
     expect(writes.includes(1)).toBe(false);
     expect(store.get("ginger:volume")).toBe(0.25);
     expect(within(document.body).getByText("Song Two")).toBeTruthy();
+  });
+
+  it("calls onRetryExhausted when retryOnError will not retry further", () => {
+    const onRetryExhausted = vi.fn();
+    const { container } = render(
+      <Ginger.Provider
+        initialTracks={tracks}
+        retryOnError={{ maxRetries: 0, retryableErrors: ["MEDIA_ERR_NETWORK"] }}
+        onRetryExhausted={onRetryExhausted}
+      >
+        <Ginger.Player />
+      </Ginger.Provider>,
+    );
+    const audio = container.querySelector("audio") as HTMLAudioElement;
+    expect(audio).toBeTruthy();
+    Object.defineProperty(audio, "error", { configurable: true, value: { code: 2 } });
+    act(() => {
+      fireEvent.error(audio);
+    });
+    expect(onRetryExhausted).toHaveBeenCalledTimes(1);
   });
 });

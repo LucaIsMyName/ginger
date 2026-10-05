@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">11.11% </span>
+                <span class="strong">10% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/9</span>
+                <span class='fraction'>1/10</span>
             </div>
         
             
@@ -88,7 +88,16 @@
 <a name='L23'></a><a href='#L23'>23</a>
 <a name='L24'></a><a href='#L24'>24</a>
 <a name='L25'></a><a href='#L25'>25</a>
-<a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -103,6 +112,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -110,28 +123,42 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { TextDisplayProps } from "./createTextDisplay";
-import { useGingerState } from "../../context/GingerSplitContexts";
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import { getCurrentTrack } from "../../internal/selectors";
+import type { TextDisplayProps } from "./createTextDisplay";
 &nbsp;
 export type YearProps = TextDisplayProps &amp; {
   format?: (year: number) =&gt; string;
 };
 &nbsp;
 export function <span class="fstat-no" title="function not covered" >Year({</span> className, style, fallback, empty, children, format }: YearProps) {
-  const <span class="cstat-no" title="statement not covered" >state = useGingerState();</span>
+  const <span class="cstat-no" title="statement not covered" >state = useGingerMetadataState();</span>
   const <span class="cstat-no" title="statement not covered" >y = getCurrentTrack(state)?.year;</span>
 <span class="cstat-no" title="statement not covered" >  if (typeof y !== "number" || !Number.isFinite(y)) {</span>
     const node = <span class="cstat-no" title="statement not covered" >empty ?? fallback ?? null;</span>
-<span class="cstat-no" title="statement not covered" >    return node ? &lt;span className={className} style={style}&gt;{node}&lt;/span&gt; : null;</span>
+<span class="cstat-no" title="statement not covered" >    return node ? (</span>
+      &lt;span data-ginger-component="Year" className={className} style={style}&gt;
+        {node}
+      &lt;/span&gt;
+    ) : null;
   }
   const text = <span class="cstat-no" title="statement not covered" >format ? format(y) : String(y);</span>
-<span class="cstat-no" title="statement not covered" >  if (children) <span class="cstat-no" title="statement not covered" >return &lt;span className={className} style={style}&gt;{children(text, state)}&lt;/span&gt;;</span></span>
+<span class="cstat-no" title="statement not covered" >  if (children)</span>
+<span class="cstat-no" title="statement not covered" >    return (</span>
+      &lt;span data-ginger-component="Year" className={className} style={style}&gt;
+        {children(text, state)}
+      &lt;/span&gt;
+    );
 <span class="cstat-no" title="statement not covered" >  return (</span>
-    &lt;span className={className} style={style}&gt;
+    &lt;span data-ginger-component="Year" className={className} style={style}&gt;
       {text}
     &lt;/span&gt;
   );
@@ -145,7 +172,7 @@ Year.displayName = "Ginger.Current.Year";
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T11:12:07.006Z
+                at 2026-10-05T08:50:50.925Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

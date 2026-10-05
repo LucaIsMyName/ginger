@@ -1,6 +1,6 @@
 {
   "name": "@lucaismyname/ginger",
-  "version": "0.0.66",
+  "version": "0.0.67",
   "description": "A headless react audio-player component primitive",
   "type": "module",
   "sideEffects": false,
@@ -96,7 +96,7 @@
     "format": "biome format --write src",
     "docs:api": "typedoc --options typedoc.json",
     "check-bundle": "node scripts/check-bundle-size.mjs",
-    "verify:release": "npm run build && npm run test && npm run typecheck && npm run lint && npm run check-bundle",
+    "verify:release": "npm run build && npm run test && npm run test:coverage && npm run typecheck && npm run lint && npm run check-bundle",
     "prepublishOnly": "npm run verify:release"
   },
   "peerDependencies": {

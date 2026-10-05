@@ -282,4 +282,15 @@ describe("queue mutation actions", () => {
     });
     expect(next.tracks[1]?.id).toBe("x");
   });
+
+  it("PLAY clears errorMessage while unpausing", () => {
+    const state = {
+      ...createInitialState({ tracks }),
+      errorMessage: "MEDIA_ERR_NETWORK",
+      isPaused: true,
+    };
+    const next = gingerReducer(state, { type: "PLAY" });
+    expect(next.isPaused).toBe(false);
+    expect(next.errorMessage).toBeNull();
+  });
 });

@@ -67,6 +67,35 @@ For docs beyond this README, use the repository links below:
 - Subpath exports (waveform, EQ, effects, spatial, transcript, remote, cast, crossfade, …): [`docs/reference/subpaths.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/subpaths.md)
 - Generated API docs: [`docs/api/index.html`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/api/index.html)
 
+## Security and trust boundaries
+
+Ginger is a **browser media primitive**: it sets `HTMLMediaElement.src`, may `fetch()` waveform URLs, forwards `fileUrl` / `artworkUrl` to Chromecast, and syncs queue state over **`BroadcastChannel`**. The library does **not** allowlist URL schemes or validate remote payloads in production by default.
+
+| Surface | Behavior | Your app should |
+|--------|----------|-----------------|
+| **Queue / player** | `Track.fileUrl` and artwork URLs are applied to `<audio>` and UI as-is | Allowlist HTTPS (or blob) origins you trust; use CSP |
+| **`@lucaismyname/ginger/remote`** | Same-origin tabs on a channel name exchange full `INIT` snapshots (including every `fileUrl`) | Treat as **trusted same-origin only**; use a private `channelName`; validate snapshots in app code if needed. Dev builds log structural issues via `validateGingerInitPayloadDev`; production does not reject malformed snapshots unless you add checks |
+| **`@lucaismyname/ginger/cast`** | Passes media and artwork URLs to the Cast SDK (receiver fetches them) | Validate URLs before queueing; Cast framework script loads from fixed Google `gstatic` URLs only |
+| **`@lucaismyname/ginger/waveform`** | `fetch(fileUrl)` for analysis | Same URL policy as your audio catalog |
+
+**Multiple providers:** Each `Ginger.Provider` owns its own crossfade **ended** suppression scope, so two players on one page (for example preview + main) do not share global suppression state.
+
+**Playback control:** Prefer Ginger **`play()` / `pause()` / `togglePlayPause()`** (or `Ginger.Control.*`) instead of calling `HTMLAudioElement.play()` / `pause()` directly on the provider’s element. Direct DOM control can briefly desync reducer state until media events fire.
+
+## Bundle layout (main vs subpaths)
+
+The npm **`@lucaismyname/ginger`** entry is a small facade (`dist/index.js`) that re-exports a larger shared chunk (for example `ginger-*.js` with compound `Ginger.*` UI). Feature subpaths (`./equalizer`, `./remote`, …) use separate entry files and **do not** pull that full UI chunk when imported alone. CI enforces per-chunk caps via `npm run check-bundle` after build.
+
+## Subpath API patterns
+
+| Subpath | Hook / API style |
+|---------|------------------|
+| `./equalizer`, `./spatial`, `./effects` | `useGinger*` + `enabled?` + local `error`; Web Audio chain order `eq` → `spatial` → `effects` → `user` |
+| `./crossfade` | `useGingerCrossfade` plus low-level `attachCrossfadeGraph` / `scheduleCrossfade` |
+| `./remote` | Always active when mounted; leader election + `INIT` / `TIME_SYNC` |
+| `./cast` | `useGingerCast` + imperative session helpers |
+| `./waveform` | Hooks and imperative `analyzeAudioFile` |
+
 ## Subpath Exports
 
 Optional entrypoints keep the core bundle small. **Copy-paste starters** (full `Ginger.Provider` + `Ginger.Player` + subpath wiring) are in [Subpath copy-paste starters](#subpath-copy-paste-starters) below.

@@ -250,7 +250,7 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
       };
     }
     case "PLAY":
-      return { ...state, isPaused: false };
+      return { ...state, isPaused: false, errorMessage: null };
     case "PAUSE":
       return { ...state, isPaused: true };
     case "TOGGLE_PAUSE":

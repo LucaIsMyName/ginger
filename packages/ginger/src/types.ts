@@ -214,6 +214,8 @@ export type GingerProviderProps = {
    * using exponential backoff. Pass `true` for defaults or an object to configure.
    */
   retryOnError?: boolean | GingerRetryConfig;
+  /** Fired once when automatic `retryOnError` attempts are exhausted for the current error. */
+  onRetryExhausted?: () => void;
   persistence?: GingerPersistenceAdapter;
   hydrateOnMount?: boolean;
   resumeOnTrackChange?: boolean;

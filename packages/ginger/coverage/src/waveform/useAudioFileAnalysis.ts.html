@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/20</span>
+                <span class='fraction'>0/21</span>
             </div>
         
             
@@ -127,7 +127,13 @@
 <a name='L62'></a><a href='#L62'>62</a>
 <a name='L63'></a><a href='#L63'>63</a>
 <a name='L64'></a><a href='#L64'>64</a>
-<a name='L65'></a><a href='#L65'>65</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -139,6 +145,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -162,6 +175,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -178,21 +198,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useEffect, useState } from "react";
-import { analyzeAudioFile, type AnalyzeAudioFileOptions, type AudioFileAnalysis } from "./analyzeAudioFile";
+import {
+  type AnalyzeAudioFileOptions,
+  type AudioFileAnalysis,
+  analyzeAudioFile,
+} from "./analyzeAudioFile";
 &nbsp;
 export type UseAudioFileAnalysisState = {
   data: AudioFileAnalysis | null;
@@ -200,10 +216,13 @@ export type UseAudioFileAnalysisState = {
   error: string | null;
 };
 &nbsp;
+/** When extending {@link AnalyzeAudioFileOptions}, thread new fields through the destructuring below and the effect dependency array. */
 export function <span class="fstat-no" title="function not covered" >useAudioFileAnalysis(</span>
   fileUrl: string | null | undefined,
   options: AnalyzeAudioFileOptions = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span>
 ): UseAudioFileAnalysisState {
+  const { timeSlices, samplesPerSlice, spectrogram, fftSize, frequencyBins, channel } = <span class="cstat-no" title="statement not covered" >options;</span>
+&nbsp;
   const [state, <span class="cstat-no" title="statement not covered" >setState] = useState&lt;UseAudioFileAnalysisState&gt;({</span>
     data: null,
     isLoading: false,
@@ -225,7 +244,14 @@ export function <span class="fstat-no" title="function not covered" >useAudioFil
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    void (<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-        const data = <span class="cstat-no" title="statement not covered" >await analyzeAudioFile(fileUrl, options);</span>
+        const data = <span class="cstat-no" title="statement not covered" >await analyzeAudioFile(fileUrl, {</span>
+          timeSlices,
+          samplesPerSlice,
+          spectrogram,
+          fftSize,
+          frequencyBins,
+          channel,
+        });
 <span class="cstat-no" title="statement not covered" >        if (!cancelled) {</span>
 <span class="cstat-no" title="statement not covered" >          setState({ data, isLoading: false, error: null });</span>
         }
@@ -243,15 +269,7 @@ export function <span class="fstat-no" title="function not covered" >useAudioFil
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >    return () =&gt; {</span></span>
 <span class="cstat-no" title="statement not covered" >      cancelled = true;</span>
     };
-  }, [
-    fileUrl,
-    options.timeSlices,
-    options.samplesPerSlice,
-    options.spectrogram,
-    options.fftSize,
-    options.frequencyBins,
-    options.channel,
-  ]);
+  }, [fileUrl, timeSlices, samplesPerSlice, spectrogram, fftSize, frequencyBins, channel]);
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return state;</span>
 }
@@ -262,7 +280,7 @@ export function <span class="fstat-no" title="function not covered" >useAudioFil
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-11T11:12:07.006Z
+                at 2026-10-05T08:50:50.925Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

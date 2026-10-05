@@ -2,6 +2,17 @@
 
 All notable changes to `@lucaismyname/ginger` are documented here.
 
+Semver: patch/minor releases keep existing exports and types; new provider callbacks are optional only.
+
+## 0.0.67
+
+- **Provider:** Optional `onRetryExhausted` when `retryOnError` gives up; `PLAY` clears `errorMessage`; autoplay `NotAllowedError` maps to a distinct message and invokes `onPlayBlocked` when `play()` is rejected.
+- **Resume:** `resumeOnTrackChange` applies saved position after metadata is available (avoids racing `load()` on track change).
+- **Crossfade:** Ended suppression is scoped per `Ginger.Provider` (no global cross-talk between instances).
+- **Refactor:** Internal provider hooks (persistence, retry, play/pause effect, devtools) — no public API changes.
+- **Docs:** README and `docs/api-overview.md` — security/trust boundaries, bundle layout, subpath patterns, playback control contract.
+- **Tests / CI:** Crossfade graph, cast hook smoke, extra hooks, ended suppression; waveform tests no longer no-op; `verify:release` runs `test:coverage`.
+
 ## 0.0.66
 
 - **Effects:** New `@lucaismyname/ginger/effects` subpath. `useGingerEffects` inserts a serial rack (delay, reverb, distortion, phaser, chorus, analog-style octaver) after spatial. `registerEffect` and `{ type: "custom", create }` add more types. Local playback only.
