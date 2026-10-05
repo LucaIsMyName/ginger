@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useGingerPlayback } from "../../context/GingerSplitContexts";
 import { Ginger } from "../../ginger";
@@ -99,5 +100,66 @@ describe("Ginger.Tracks declarative", () => {
     );
     expect(screen.getByTestId("t-0").textContent).toBe("Second");
     expect(screen.getByTestId("t-1").textContent).toBe("First");
+  });
+
+  it("keeps an imperative insert while declarative tracks stay mounted", () => {
+    function InsertOnce() {
+      const { insertTrackAt } = useGingerPlayback();
+      const once = useRef(false);
+      useEffect(() => {
+        if (once.current) return;
+        once.current = true;
+        insertTrackAt({ id: "z", title: "Inserted", fileUrl: "https://example.com/z.mp3" });
+      }, [insertTrackAt]);
+      return null;
+    }
+
+    render(
+      <Ginger.Provider initialTracks={[trackA]}>
+        <Ginger.Tracks merge="append">
+          <Ginger.Tracks.Track id="b" title="Song B" src="https://example.com/b.mp3" />
+        </Ginger.Tracks>
+        <InsertOnce />
+        <QueueProbe />
+      </Ginger.Provider>,
+    );
+
+    expect(screen.getByText("Inserted")).toBeTruthy();
+    expect(screen.getByTestId("queue-len").textContent).toBe("3");
+  });
+
+  it("updates artwork without resetting the queue order", () => {
+    function ArtworkProbe() {
+      const { tracks } = useGingerPlayback();
+      return <span data-testid="art">{tracks[1]?.artworkUrl ?? ""}</span>;
+    }
+
+    const { rerender } = render(
+      <Ginger.Provider initialTracks={[trackA]}>
+        <Ginger.Tracks merge="append">
+          <Ginger.Tracks.Track id="b" title="Song B" src="https://example.com/b.mp3" />
+        </Ginger.Tracks>
+        <ArtworkProbe />
+        <QueueProbe />
+      </Ginger.Provider>,
+    );
+    expect(screen.getByTestId("art").textContent).toBe("");
+
+    rerender(
+      <Ginger.Provider initialTracks={[trackA]}>
+        <Ginger.Tracks merge="append">
+          <Ginger.Tracks.Track
+            id="b"
+            title="Song B"
+            src="https://example.com/b.mp3"
+            artworkUrl="https://example.com/b.jpg"
+          />
+        </Ginger.Tracks>
+        <ArtworkProbe />
+        <QueueProbe />
+      </Ginger.Provider>,
+    );
+    expect(screen.getByTestId("art").textContent).toBe("https://example.com/b.jpg");
+    expect(screen.getByTestId("queue-len").textContent).toBe("2");
   });
 });

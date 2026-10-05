@@ -97,6 +97,7 @@ describe("Repeat", () => {
     const { container } = renderGinger(<Repeat />, { tracks });
     const btn = within(container).getByRole("button", { name: "Repeat off" });
     expect(btn.querySelector("svg")).toBeTruthy();
+    expect(btn.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("calls consumer onClick alongside internal handler", () => {

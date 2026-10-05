@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   attachLiveAnalyser,
   detachLiveAnalyser,
-  setProcessingChain,
+  setProcessingSlot,
 } from "../analyzer/liveAudioGraph";
 import { useGinger } from "../hooks/useGinger";
 
@@ -83,14 +83,14 @@ export function useGingerEqualizer(
     }
 
     if (!enabled) {
-      setProcessingChain(el, []);
+      setProcessingSlot(el, "eq", []);
       filterNodesRef.current = [];
       return;
     }
 
     try {
       // Attach a temporary analyser solely to get (or create) the shared AudioContext.
-      // The graph is rebuilt by liveAudioGraph after we call setProcessingChain, so this
+      // The graph is rebuilt by liveAudioGraph after we call setProcessingSlot, so this
       // temporary consumer is detached immediately after we have the context reference.
       const attached = attachLiveAnalyser(el, {
         fftSize: 32,
@@ -113,7 +113,7 @@ export function useGingerEqualizer(
       filterNodesRef.current = filters;
 
       // Install processing chain BEFORE removing the temp analyser so the graph stays valid
-      setProcessingChain(el, filters);
+      setProcessingSlot(el, "eq", filters);
       detachLiveAnalyser(el, tempId);
 
       setError(null);
@@ -126,7 +126,7 @@ export function useGingerEqualizer(
     return () => {
       const element = audioRef.current;
       if (element) {
-        setProcessingChain(element, []);
+        setProcessingSlot(element, "eq", []);
       }
       filterNodesRef.current = [];
     };
@@ -141,6 +141,26 @@ export function useGingerEqualizer(
   }, []);
 
   const setBands = useCallback((nextBands: EqualizerBand[]) => {
+    const nodes = filterNodesRef.current;
+    const previous = bandsRef.current;
+    const structureSame =
+      nextBands.length === nodes.length &&
+      nextBands.length === previous.length &&
+      nextBands.every((band, index) => {
+        const prev = previous[index];
+        return (
+          prev != null &&
+          band.frequency === prev.frequency &&
+          (band.type ?? "peaking") === (prev.type ?? "peaking") &&
+          (band.q ?? 1) === (prev.q ?? 1)
+        );
+      });
+    if (structureSame) {
+      nextBands.forEach((band, index) => {
+        const node = nodes[index];
+        if (node) node.gain.value = band.gain ?? 0;
+      });
+    }
     setBandsState(nextBands);
   }, []);
 

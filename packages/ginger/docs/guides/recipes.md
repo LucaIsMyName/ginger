@@ -21,7 +21,7 @@ The second argument is **`currentIndex`** (optional). Omit it to keep the curren
 
 As an alternative to passing every track in the **`initialTracks`** array, mount **`Ginger.Tracks`** and one **`Ginger.Tracks.Track`** per row (props mirror **`Track`**; **`src`** aliases **`fileUrl`**). Use **`merge="append"`** (default) to append after **`initialTracks`**, **`prepend`** to put declarative tracks first, or **`replace`** for a JSX-only queue. Updates when you add, remove, or reorder **`Ginger.Track`** children.
 
-Imperative **`setQueue()`** and declarative sync both dispatch **`SET_QUEUE`**; mixing them is fine, but if you change the queue only via **`setQueue()`** without updating **`initialTracks`** props, a later declarative sync can realign the queue with **props + declarative** again—see the root [`README.md`](../../README.md) and [`reference/components.md`](../reference/components.md#gingertracks-and-gingertrack).
+Imperative **`insertTrack`**, **`removeTrack`**, and **`setQueue()`** stay in place while **`Ginger.Tracks`** is mounted. The declarative list is reapplied only when **`Ginger.Track`** children or **`initialTracks`** change. That membership change dispatches **`SET_QUEUE`**, which clears shuffle and resets timing. Field-only updates (artwork, chapters, lyrics) patch the existing rows and keep the playhead. See [`reference/components.md`](../reference/components.md#gingertracks-and-gingertrack).
 
 ---
 
@@ -44,7 +44,7 @@ Configure both on **`Ginger.Provider`** so UI can show a “Tap to enable audio�
 
 ## Persist and hydrate playback state
 
-Pass a **`persistence`** adapter (get/set for volume, mute, rate, repeat, index, …) and set **`hydrateOnMount`** when you want the provider to **`INIT`** from storage on first paint. Pair with **`resumeOnTrackChange`** if you want per-track resume positions.
+Pass a **`persistence`** adapter (get/set for volume, mute, rate, repeat, index, …) and set **`hydrateOnMount`** when you want the provider to **`INIT`** from storage on first paint. Writes wait until that hydration has been applied, so the first save does not overwrite stored values with defaults. Pair with **`resumeOnTrackChange`** if you want per-track resume positions.
 
 ---
 
@@ -96,7 +96,7 @@ Call **`useGingerKeyboardShortcuts()`** with a **`bindings`** map and optional *
 | Chapters on `Track` | **`useGingerChapters()`**, **`Ginger.Current.Chapters`**, **`useGingerChapterProgress()`** |
 | LRC lyrics | **`useGingerLyricsSync()`**, **`parseLrc()`** |
 | Prefetch next resource | **`useNextTrackPrefetch()`** |
-| Sleep timer | **`useGingerSleepTimer()`** |
+| Sleep timer | **`useGingerSleepTimer()`** — `durationMs` and/or `stopAfterTracks` (forward advances only) |
 | Custom scrubber | **`useSeekDrag()`** |
 | Playback history | **`useGingerPlaybackHistory()`** |
 | Volume fade | **`useGingerVolumeFade()`** |

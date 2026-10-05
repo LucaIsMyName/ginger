@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerClockState } from "../../context/GingerSplitContexts";
 import { formatMmSs } from "../../internal/formatTime";
 import { effectiveDuration, effectiveRemaining, progressFraction } from "../../internal/selectors";
 import type { DisplayBaseProps, GingerState } from "../../types";
@@ -38,21 +38,21 @@ function renderTime(
 }
 
 export function Elapsed(props: TimeTextProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   return renderTime(state.currentTime, state, props);
 }
 
 Elapsed.displayName = "Ginger.Current.Elapsed";
 
 export function Duration(props: TimeTextProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   return renderTime(effectiveDuration(state), state, props);
 }
 
 Duration.displayName = "Ginger.Current.Duration";
 
 export function Remaining(props: TimeTextProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   return renderTime(effectiveRemaining(state), state, props);
 }
 
@@ -66,7 +66,7 @@ export type ProgressProps = DisplayBaseProps & {
 };
 
 export function Progress({ className, style, fallback, empty, children }: ProgressProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   const duration = effectiveDuration(state);
   const fraction = progressFraction(state);
   if (!(duration > 0)) {
@@ -108,7 +108,7 @@ export function TimeRail({
   showBuffered = false,
   unstyled = false,
 }: TimeRailProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   const progressPct = `${Math.round(progressFraction(state) * 100)}%`;
   const bufPct = `${Math.round(Math.min(1, Math.max(0, state.bufferedFraction)) * 100)}%`;
   return (
@@ -168,7 +168,7 @@ export type BufferRailProps = DisplayBaseProps & {
 
 /** Buffered portion of the timeline (0…`bufferedFraction`); pair with `TimeRail` or use alone. */
 export function BufferRail({ className, style, height = 4, unstyled = false }: BufferRailProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   const bufPct = `${Math.round(Math.min(1, Math.max(0, state.bufferedFraction)) * 100)}%`;
   return (
     <div

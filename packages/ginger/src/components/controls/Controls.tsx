@@ -85,6 +85,7 @@ export function Repeat({ type = "button", ariaLabel, onClick, children, ...rest 
       {...rest}
       type={type}
       aria-label={ariaLabel ?? label}
+      aria-pressed={repeatMode === "off" ? false : repeatMode === "one" ? "mixed" : true}
       onClick={(e) => {
         cycleRepeat();
         onClick?.(e);

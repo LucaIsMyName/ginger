@@ -1,4 +1,4 @@
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import { getCurrentTrack } from "../../internal/selectors";
 import type { TextDisplayProps } from "./createTextDisplay";
 
@@ -15,7 +15,7 @@ export function FileUrl({
   empty,
   children,
 }: FileUrlProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   if (!visible) return null;
   const value = getCurrentTrack(state)?.fileUrl ?? "";
   if (!value) {

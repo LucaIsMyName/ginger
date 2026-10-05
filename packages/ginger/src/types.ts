@@ -122,9 +122,12 @@ export type GingerAction =
         volume?: number;
         muted?: boolean;
         playbackRate?: number;
+        /** Restored playback position. Omitted values still start at 0. */
+        currentTime?: number;
       };
     }
   | { type: "SET_QUEUE"; payload: { tracks: Track[]; currentIndex?: number } }
+  | { type: "UPDATE_TRACK_DETAILS"; payload: { tracks: Track[] } }
   | { type: "INSERT_TRACK"; payload: { track: Track; index?: number; autoPlay?: boolean } }
   | { type: "REMOVE_TRACK"; payload: { index: number } }
   | { type: "MOVE_TRACK"; payload: { fromIndex: number; toIndex: number } }

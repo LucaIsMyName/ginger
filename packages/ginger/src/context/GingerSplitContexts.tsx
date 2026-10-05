@@ -38,7 +38,7 @@ export type GingerPlaybackActions = {
 export type GingerPlaybackContextValue = GingerPlaybackSlice & GingerPlaybackActions;
 
 export type GingerMediaActions = {
-  seek: (timeSeconds: number) => void;
+  seek: (timeSeconds: number, durationHint?: number) => void;
   setVolume: (volume: number) => void;
   setMuted: (muted: boolean) => void;
   toggleMute: () => void;
@@ -95,6 +95,58 @@ export function useGingerMediaControls(): GingerMediaControlContextValue {
   const ctx = useContext(GingerMediaControlContext);
   if (!ctx) throw new Error("Ginger hooks must be used within <Ginger.Provider>");
   return ctx;
+}
+
+const IDLE_TIME: GingerTimeSlice = {
+  currentTime: 0,
+  duration: 0,
+  bufferedFraction: 0,
+  isBuffering: false,
+  errorMessage: null,
+};
+
+function mediaValueFrom(
+  time: GingerTimeSlice,
+  controls: GingerMediaControlContextValue,
+): GingerMediaContextValue {
+  return {
+    ...time,
+    volume: controls.volume,
+    muted: controls.muted,
+    playbackRate: controls.playbackRate,
+    seek: controls.seek,
+    setVolume: controls.setVolume,
+    setMuted: controls.setMuted,
+    toggleMute: controls.toggleMute,
+    setPlaybackRate: controls.setPlaybackRate,
+    audioRef: controls.audioRef,
+    notifyEnded: controls.notifyEnded,
+    dispatch: controls.dispatch,
+  };
+}
+
+/**
+ * Playback and media controls only. Does not re-render on time ticks.
+ * Time fields on the returned state stay at their idle values.
+ */
+export function useGingerMetadataState(): GingerState {
+  const pb = useGingerPlayback();
+  const controls = useGingerMediaControls();
+  return useMemo(
+    () => gingerStateFromContextValues(pb, mediaValueFrom(IDLE_TIME, controls)),
+    [pb, controls],
+  );
+}
+
+/** Playback plus the high-frequency time slice. Use for clocks, rails, and playback status. */
+export function useGingerClockState(): GingerState {
+  const pb = useGingerPlayback();
+  const time = useGingerTime();
+  const controls = useGingerMediaControls();
+  return useMemo(
+    () => gingerStateFromContextValues(pb, mediaValueFrom(time, controls)),
+    [pb, time, controls],
+  );
 }
 
 /** Full merged state; prefer over `useGingerContext().state` so updates follow playback vs media splits. */

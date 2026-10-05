@@ -11,4 +11,5 @@ export type RemoteMessage =
   | { type: "LEADER_ANNOUNCE"; tabId: string }
   | { type: "LEADER_RESIGN"; tabId: string }
   | { type: "HEARTBEAT"; tabId: string; connectedCount: number }
-  | { type: "STATE_SNAPSHOT"; tabId: string; snapshot: GingerInitPayload };
+  | { type: "STATE_SNAPSHOT"; tabId: string; snapshot: GingerInitPayload }
+  | { type: "TIME_SYNC"; tabId: string; currentTime: number; duration: number };

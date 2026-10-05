@@ -51,6 +51,18 @@ describe("useGingerEqualizer", () => {
 
     expect(context.biquadFilters[1]?.gain.value).toBe(6);
     expect(result.current.bands[1]?.gain).toBe(6);
+
+    act(() => {
+      result.current.setBands([
+        { frequency: 60, gain: -3 },
+        { frequency: 250, gain: 4 },
+      ]);
+    });
+
+    expect(context.biquadFilters).toHaveLength(2);
+    expect(context.biquadFilters[0]?.gain.value).toBe(-3);
+    expect(context.biquadFilters[1]?.gain.value).toBe(4);
+    expect(result.current.bands[0]?.gain).toBe(-3);
   });
 
   it("tears down processing chain when disabled", async () => {
@@ -77,7 +89,9 @@ describe("useGingerEqualizer", () => {
     rerender({ enabled: false });
 
     await waitFor(() => {
-      expect(webAudio.contexts[0]?.closeCalls).toBe(1);
+      const context = webAudio.contexts[0]!;
+      expect(context.closeCalls).toBe(0);
+      expect(context.sources[0]?.connections).toEqual([context.destination]);
     });
   });
 });

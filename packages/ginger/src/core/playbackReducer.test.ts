@@ -154,6 +154,13 @@ describe("track identity helpers", () => {
     expect(findIndexByTrackIdentity(duplicateUrls, duplicateUrls[0])).toBe(0);
   });
 
+  it("returns -1 when the track is not in the queue", () => {
+    expect(
+      findIndexByTrackIdentity(tracks, { id: "missing", title: "No", fileUrl: "/no.mp3" }),
+    ).toBe(-1);
+    expect(findIndexByTrackIdentity(tracks, null)).toBe(-1);
+  });
+
   it("warns once when identity is ambiguous (no reference match, duplicate fileUrl)", () => {
     const duplicateUrls: Track[] = [
       { title: "First", fileUrl: "/same.mp3" },
@@ -183,6 +190,56 @@ describe("queue mutation actions", () => {
     });
     expect(next.currentIndex).toBe(2);
     expect(next.tracks[0]?.id).toBe("x");
+  });
+
+  it("mirrors a shuffled insert beside the neighboring canonical track", () => {
+    const shuffled = gingerReducer(createInitialState({ tracks, currentIndex: 0 }), {
+      type: "TOGGLE_SHUFFLE",
+    });
+    const inserted = gingerReducer(shuffled, {
+      type: "INSERT_TRACK",
+      payload: { index: 1, track: { id: "x", title: "X", fileUrl: "/x.mp3" } },
+    });
+    const restored = gingerReducer(inserted, { type: "TOGGLE_SHUFFLE" });
+    const ids = restored.tracks.map((track) => track.id);
+    const insertedAt = ids.indexOf("x");
+    const neighbor = shuffled.tracks[1];
+    const neighborAt = ids.indexOf(neighbor?.id);
+    expect(insertedAt).toBeGreaterThanOrEqual(0);
+    expect(neighborAt).toBe(insertedAt + 1);
+  });
+
+  it("does not drop the first canonical track when a removed row cannot be identified", () => {
+    const state = {
+      ...createInitialState({ tracks, currentIndex: 0 }),
+      isShuffled: true,
+      originalTracks: [{ id: "canon", title: "Canon", fileUrl: "/canon.mp3" }],
+    };
+    const next = gingerReducer(state, { type: "REMOVE_TRACK", payload: { index: 0 } });
+    expect(next.originalTracks?.[0]?.id).toBe("canon");
+  });
+
+  it("keeps buffering through a time update until canplay", () => {
+    const waiting = gingerReducer(createInitialState({ tracks, currentIndex: 0 }), {
+      type: "MEDIA_WAITING",
+    });
+    const ticked = gingerReducer(waiting, {
+      type: "MEDIA_TIME_UPDATE",
+      payload: { currentTime: 1, duration: 10, bufferedFraction: 0.2 },
+    });
+    expect(ticked.isBuffering).toBe(true);
+    expect(ticked.currentTime).toBe(1);
+    const ready = gingerReducer(ticked, { type: "MEDIA_CANPLAY" });
+    expect(ready.isBuffering).toBe(false);
+  });
+
+  it("restores currentTime from INIT", () => {
+    const next = gingerReducer(createInitialState({ tracks, currentIndex: 0 }), {
+      type: "INIT",
+      payload: { tracks, currentIndex: 1, currentTime: 12.5 },
+    });
+    expect(next.currentIndex).toBe(1);
+    expect(next.currentTime).toBe(12.5);
   });
 
   it("remove active track resets timing and clamps index", () => {

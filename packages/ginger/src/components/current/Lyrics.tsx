@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import { getCurrentTrack } from "../../internal/selectors";
 import type { DisplayBaseProps, GingerState } from "../../types";
 
@@ -20,7 +20,7 @@ export function Lyrics({
   preserveWhitespace = true,
   unstyled = false,
 }: LyricsProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   const raw = getCurrentTrack(state)?.lyrics ?? "";
   const value = preserveWhitespace ? raw.replace(/^\s+|\s+$/g, "") : raw.trim();
   if (!value) {

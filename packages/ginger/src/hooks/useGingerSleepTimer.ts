@@ -1,8 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useGingerPlayback } from "../context/GingerSplitContexts";
+import { computeNextIndex } from "../core/transitions";
 
 export type GingerSleepTimerOptions = {
   durationMs?: number;
+  /**
+   * Pause after this many forward advances (next, natural end, or repeat-all wrap).
+   * Previous, shuffle, and other index jumps do not count.
+   */
   stopAfterTracks?: number;
   respectPause?: boolean;
   enabled?: boolean;
@@ -11,7 +16,7 @@ export type GingerSleepTimerOptions = {
 
 export function useGingerSleepTimer(options: GingerSleepTimerOptions): void {
   const { durationMs, stopAfterTracks, respectPause = true, enabled = true, onFire } = options;
-  const { currentIndex, pause, isPaused } = useGingerPlayback();
+  const { currentIndex, pause, isPaused, tracks, repeatMode, playbackMode } = useGingerPlayback();
   const remainingTracksRef = useRef(stopAfterTracks ?? 0);
   const prevIndexRef = useRef(currentIndex);
 
@@ -76,10 +81,17 @@ export function useGingerSleepTimer(options: GingerSleepTimerOptions): void {
     const prev = prevIndexRef.current;
     prevIndexRef.current = currentIndex;
     if (currentIndex === prev) return;
+    const expected = computeNextIndex({
+      tracks,
+      currentIndex: prev,
+      repeatMode,
+      playbackMode,
+    });
+    if (currentIndex !== expected) return;
     remainingTracksRef.current -= 1;
     if (remainingTracksRef.current <= 0) {
       pause();
       onFire?.();
     }
-  }, [currentIndex, enabled, onFire, pause, stopAfterTracks]);
+  }, [currentIndex, enabled, onFire, pause, playbackMode, repeatMode, stopAfterTracks, tracks]);
 }

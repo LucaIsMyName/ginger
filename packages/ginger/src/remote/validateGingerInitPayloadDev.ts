@@ -27,6 +27,7 @@ export function validateGingerInitPayloadDev(snapshot: unknown): snapshot is Gin
   if (s.volume !== undefined && typeof s.volume !== "number") return false;
   if (s.muted !== undefined && typeof s.muted !== "boolean") return false;
   if (s.playbackRate !== undefined && typeof s.playbackRate !== "number") return false;
+  if (s.currentTime !== undefined && typeof s.currentTime !== "number") return false;
   if (
     s.playlistMeta !== undefined &&
     s.playlistMeta !== null &&

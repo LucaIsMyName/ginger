@@ -27,9 +27,10 @@ export {
   attachLiveAnalyser,
   detachLiveAnalyser,
   setProcessingChain,
+  setProcessingSlot,
 } from "./analyzer/liveAudioGraph";
 /** Low-level analyzer graph option type. */
-export type { LiveAnalyserOptions } from "./analyzer/liveAudioGraph";
+export type { LiveAnalyserOptions, ProcessingSlot } from "./analyzer/liveAudioGraph";
 
 /** Core state and provider public type exports. */
 export type {
@@ -66,8 +67,10 @@ export { derivePlaybackUiState } from "./internal/selectors";
 export {
   gingerStateFromContexts,
   gingerStateFromContextValues,
+  useGingerClockState,
   useGingerMedia,
   useGingerMediaControls,
+  useGingerMetadataState,
   useGingerPlayback,
   useGingerState,
   useGingerTime,

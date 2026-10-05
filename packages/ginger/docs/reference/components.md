@@ -22,7 +22,7 @@ Headless (or minimally styled) transport and mixing controls. Pass **`className`
 | Export | Description |
 |--------|-------------|
 | **`PlayPause`** | Toggles play/pause; icon defaults when `children` omitted. |
-| **`Repeat`** | Cycles repeat mode (`off` → `all` → `one`). |
+| **`Repeat`** | Cycles repeat mode (`off` → `all` → `one`). `aria-pressed` is `false` (off), `true` (all), or `mixed` (one). |
 | **`Next` / `Previous`** | Queue navigation; previous may seek to start when far into the track (see provider `prevRestartThresholdSeconds`). |
 | **`Shuffle`** | Toggles shuffle; `aria-pressed` when on. |
 | **`SeekBar`** | Range input bound to position + seek. |
@@ -35,6 +35,8 @@ Headless (or minimally styled) transport and mixing controls. Pass **`className`
 ## `Ginger.Current.*`
 
 Read-only views of the **active** track and playback state. Most accept **`fallback`** / **`empty`** text when data is missing.
+
+Metadata (title, artist, artwork, queue index) subscribes to playback state and does **not** re-render on every time tick. Elapsed time, rails, and `PlaybackState` follow the clock.
 
 ### Metadata
 
@@ -79,7 +81,7 @@ Declare queue entries in JSX instead of (or in addition to) the **`initialTracks
 
 | Export | Description |
 |--------|-------------|
-| **`Ginger.Tracks`** | Wrapper with a **`merge`** prop: **`append`** (default), **`prepend`**, or **`replace`**. Combines declarative children with the provider’s current **`initialTracks`** snapshot (from props via an internal ref). Renders a layout-neutral wrapper (`display: contents`). |
+| **`Ginger.Tracks`** | Wrapper with a **`merge`** prop: **`append`** (default), **`prepend`**, or **`replace`**. Combines declarative children with the provider’s **`initialTracks`** snapshot. Re-syncs when those children or `initialTracks` change, including artwork, chapters, and lyrics. Imperative `insertTrack`, `removeTrack`, and `setQueue` are left in place while the declarative list is unchanged. A declarative reorder or membership change dispatches `SET_QUEUE`, which clears shuffle and resets timing. Renders a layout-neutral wrapper (`display: contents`). |
 | **`Ginger.Track`** | Data-only: renders **nothing**. Registers one **`Track`**; requires **`title`** and **`fileUrl`** or **`src`**. Optional **`id`** keeps identity stable when reordering siblings. Must appear under **`Ginger.Tracks`**. |
 
 Typical flow: define the queue with **`Ginger.Tracks`** / **`Ginger.Track`**, then render the list with auto **`Ginger.Playlist`** (no `children`) or manual **`Ginger.Playlist.Track`** rows by **`index`**.

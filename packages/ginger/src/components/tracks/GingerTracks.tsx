@@ -1,5 +1,6 @@
 import { type HTMLAttributes, type ReactNode, useLayoutEffect, useRef } from "react";
 import { useGingerPlayback } from "../../context/GingerSplitContexts";
+import { trackIdentity } from "../../core/queue";
 import type { Track } from "../../types";
 import { useGingerDeclarativeMerge } from "./GingerDeclarativeMergeContext";
 import { GingerTracksRegistryProvider } from "./GingerTracksRegistryContext";
@@ -21,6 +22,10 @@ export type GingerTracksProps = Omit<HTMLAttributes<HTMLDivElement>, "children">
   merge?: GingerTracksMergeMode;
 };
 
+function trackSyncSignature(track: Track | undefined): string {
+  return track ? JSON.stringify(track) : "";
+}
+
 function GingerTracksSync({
   merge,
   registry,
@@ -30,28 +35,40 @@ function GingerTracksSync({
 }) {
   const { dispatch, tracks, currentIndex } = useGingerPlayback();
   const mergeCtx = useGingerDeclarativeMerge();
+  const tracksRef = useRef(tracks);
+  const indexRef = useRef(currentIndex);
+  tracksRef.current = tracks;
+  indexRef.current = currentIndex;
+  const appliedIdentityRef = useRef<string | null>(null);
 
   const declarativeSig = registry.order
-    .map((id) => {
-      const t = registry.slots.get(id);
-      return t ? `${id}:${t.fileUrl}:${t.title}` : "";
-    })
+    .map((id) => trackSyncSignature(registry.slots.get(id)))
     .join("|");
 
   const initialSnapshot = mergeCtx?.getInitialTracksSnapshot() ?? [];
-  const initialSig = initialSnapshot.map((t) => `${t.id ?? ""}:${t.fileUrl}:${t.title}`).join("|");
+  const initialSig = initialSnapshot.map((t) => trackSyncSignature(t)).join("|");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: declarativeSig/initialSig drive re-sync when JSX or provider initialTracks change; registry ref identity is stable while its contents mutate
+  // biome-ignore lint/correctness/useExhaustiveDependencies: declarativeSig/initialSig drive re-sync when JSX or provider initialTracks change; registry ref identity is stable while its contents mutate. Reducer queue edits must not re-enter this effect.
   useLayoutEffect(() => {
     const initial = mergeCtx?.getInitialTracksSnapshot() ?? [];
     const declarative: Track[] = registry.order
       .map((id) => registry.slots.get(id))
       .filter((t): t is Track => t != null);
     const merged = mergeDeclarativeQueue(merge, initial, declarative);
-    if (tracksQueueShallowEqual(merged, tracks)) return;
-    const idx = Math.min(currentIndex, Math.max(0, merged.length - 1));
+    const identity = merged.map((track) => trackIdentity(track)).join("|");
+    const current = tracksRef.current;
+    if (tracksQueueShallowEqual(merged, current)) {
+      appliedIdentityRef.current = identity;
+      return;
+    }
+    if (appliedIdentityRef.current === identity) {
+      dispatch({ type: "UPDATE_TRACK_DETAILS", payload: { tracks: merged } });
+      return;
+    }
+    appliedIdentityRef.current = identity;
+    const idx = Math.min(indexRef.current, Math.max(0, merged.length - 1));
     dispatch({ type: "SET_QUEUE", payload: { tracks: merged, currentIndex: idx } });
-  }, [merge, declarativeSig, initialSig, mergeCtx, dispatch, registry, tracks, currentIndex]);
+  }, [merge, declarativeSig, initialSig, mergeCtx, dispatch, registry]);
 
   return null;
 }

@@ -6,6 +6,7 @@ import {
   insertTrackAt,
   moveTrack,
   removeTrackAt,
+  replaceTrackFields,
   shuffleWithAnchor,
 } from "./queue";
 import { computeNextIndex, computePrevIndex, cycleRepeatMode } from "./transitions";
@@ -47,6 +48,7 @@ export function createInitialState(params: {
   volume?: number;
   muted?: boolean;
   playbackRate?: number;
+  currentTime?: number;
 }): GingerState {
   const tracks = [...params.tracks];
   let currentIndex = clampIndex(params.currentIndex ?? 0, tracks.length);
@@ -72,7 +74,17 @@ export function createInitialState(params: {
     volume: clampVolume(params.volume ?? 1),
     muted: params.muted ?? false,
     playbackRate: clampPlaybackRate(params.playbackRate ?? 1),
+    ...(typeof params.currentTime === "number" && Number.isFinite(params.currentTime)
+      ? { currentTime: Math.max(0, params.currentTime) }
+      : {}),
   };
+}
+
+function canonicalInsertIndex(original: Track[], visible: Track[], insertIndex: number): number {
+  if (insertIndex >= visible.length) return original.length;
+  const neighbor = visible[insertIndex];
+  const neighborIndex = findIndexByTrackIdentity(original, neighbor);
+  return neighborIndex < 0 ? original.length : neighborIndex;
 }
 
 export function gingerReducer(state: GingerState, action: GingerAction): GingerState {
@@ -89,6 +101,7 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
         volume,
         muted,
         playbackRate,
+        currentTime,
       } = action.payload;
       return createInitialState({
         tracks,
@@ -101,6 +114,7 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
         volume,
         muted,
         playbackRate,
+        currentTime,
       });
     }
     case "SET_QUEUE": {
@@ -114,6 +128,16 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
         isShuffled: false,
         originalTracks: null,
         ...resetTimingOnly,
+      };
+    }
+    case "UPDATE_TRACK_DETAILS": {
+      const updates = action.payload.tracks;
+      return {
+        ...state,
+        tracks: replaceTrackFields(state.tracks, updates),
+        originalTracks: state.originalTracks
+          ? replaceTrackFields(state.originalTracks, updates)
+          : state.originalTracks,
       };
     }
     case "INSERT_TRACK": {
@@ -133,10 +157,15 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
       }
       const currentIndex =
         insertIndex <= state.currentIndex ? state.currentIndex + 1 : state.currentIndex;
-      // Mirror insert into originalTracks so shuffle order is preserved
+      // Insert into the canonical list just before the shuffled neighbor, so unshuffle
+      // keeps the track next to the row it was placed beside.
       const originalTracks =
         state.isShuffled && state.originalTracks
-          ? insertTrackAt(state.originalTracks, action.payload.track, state.originalTracks.length)
+          ? insertTrackAt(
+              state.originalTracks,
+              action.payload.track,
+              canonicalInsertIndex(state.originalTracks, state.tracks, insertIndex),
+            )
           : state.originalTracks;
       return {
         ...state,
@@ -160,7 +189,9 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
           ? (() => {
               const removedTrack = state.tracks[index];
               const origIdx = findIndexByTrackIdentity(state.originalTracks, removedTrack);
-              return removeTrackAt(state.originalTracks, origIdx);
+              return origIdx < 0
+                ? state.originalTracks
+                : removeTrackAt(state.originalTracks, origIdx);
             })()
           : state.originalTracks;
       const nextIsShuffled = state.isShuffled && tracks.length > 1;
@@ -196,7 +227,9 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
           ? (() => {
               const currentTrack = state.tracks[state.currentIndex];
               const origCurrentIdx = findIndexByTrackIdentity(state.originalTracks, currentTrack);
-              return addNextTrack(state.originalTracks, origCurrentIdx, action.payload.track);
+              return origCurrentIdx < 0
+                ? state.originalTracks
+                : addNextTrack(state.originalTracks, origCurrentIdx, action.payload.track);
             })()
           : state.originalTracks;
       return {
@@ -241,7 +274,8 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
       }
       const restored = state.originalTracks ? [...state.originalTracks] : [...state.tracks];
       const current = state.tracks[state.currentIndex];
-      const newIndex = findIndexByTrackIdentity(restored, current);
+      const found = findIndexByTrackIdentity(restored, current);
+      const newIndex = found < 0 ? 0 : found;
       return {
         ...state,
         isShuffled: false,
@@ -278,7 +312,6 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
           ? action.payload.duration
           : state.duration,
         bufferedFraction: action.payload.bufferedFraction,
-        isBuffering: false,
       };
     case "MEDIA_LOADED_METADATA":
       return {

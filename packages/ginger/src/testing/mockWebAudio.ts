@@ -65,6 +65,21 @@ class MockAudioListener {
   readonly positionZ = new MockAudioParam();
 }
 
+export class MockGainNode extends MockAudioNode {
+  readonly gain = {
+    value: 1,
+    setValueAtTime(value: number) {
+      this.value = value;
+    },
+    linearRampToValueAtTime(value: number) {
+      this.value = value;
+    },
+    setValueCurveAtTime() {
+      // curve is applied by the real node; tests only need the call to succeed
+    },
+  };
+}
+
 export class MockPannerNode extends MockAudioNode {
   panningModel: PanningModelType = "HRTF";
   distanceModel: DistanceModelType = "inverse";
@@ -83,9 +98,11 @@ export class MockAudioContext extends EventTarget {
   readonly panners: MockPannerNode[] = [];
 
   sampleRate = 44_100;
+  currentTime = 0;
   state: MockAudioContextState = "running";
   closeCalls = 0;
   resumeCalls = 0;
+  readonly gains: MockGainNode[] = [];
 
   createMediaElementSource(element: HTMLAudioElement) {
     const source = new MockMediaElementAudioSourceNode(element);
@@ -109,6 +126,12 @@ export class MockAudioContext extends EventTarget {
     const panner = new MockPannerNode();
     this.panners.push(panner);
     return panner as unknown as PannerNode;
+  }
+
+  createGain() {
+    const gain = new MockGainNode();
+    this.gains.push(gain);
+    return gain as unknown as GainNode;
   }
 
   async resume() {

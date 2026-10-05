@@ -1,6 +1,18 @@
 # Changelog
 
-All notable changes to `@lucaismyname/ginger` are documented here.
+All notable changes to `@lucaismyname/ginger` are documented here. The published copy is [`packages/ginger/CHANGELOG.md`](../../../CHANGELOG.md).
+
+## 0.0.65
+
+- **Queue:** `findIndexByTrackIdentity` returns `-1` when a track is missing, so shuffle remove and unshuffle no longer treat a miss as index `0`. Inserting while shuffled places the new track beside its neighbor in the canonical list.
+- **`Ginger.Tracks`:** Declarative sync runs when the JSX queue or `initialTracks` change, not when imperative queue edits do. Field updates do not reset playback time.
+- **Persistence:** `hydrateOnMount` applies saved settings before the first write.
+- **Retry and buffering:** Retries no longer clear the error before `load()` recovers. `timeupdate` no longer clears `isBuffering`.
+- **Previous:** Restarting the current track updates reducer `currentTime` immediately.
+- **Sleep timer:** `stopAfterTracks` counts forward advances only.
+- **Web Audio:** The media-element `AudioContext` stays open. `setProcessingSlot` composes `eq` → `spatial` → `user`. `setBands` applies gain-only updates. Crossfade shares that graph, does not close it, and reports attach failures on `error`.
+- **UI:** Metadata components skip time-tick re-renders (`useGingerMetadataState`, `useGingerClockState`). Focus uses `--ginger-focus-ring`. Repeat sets `aria-pressed`.
+- **Remote:** Snapshots include `currentTime`, plus a throttled `TIME_SYNC`.
 
 ## 0.0.48
 

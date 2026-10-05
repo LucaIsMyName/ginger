@@ -9,6 +9,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import { GingerDeclarativeMergeProvider } from "../components/tracks/GingerDeclarativeMergeContext";
 import {
@@ -42,6 +43,17 @@ import {
   GingerTimeContext,
   type GingerTimeContextValue,
 } from "./GingerSplitContexts";
+
+const GINGER_FOCUS_CSS = `[data-ginger-root] :where(button, [role="slider"], input[type="range"], select):focus-visible{outline:none;box-shadow:var(--ginger-focus-ring,0 0 0 2px rgba(59,130,246,.45))}`;
+
+/** Dev-only logging without a Node `process` global. Bundlers may still define it at runtime. */
+function isDevEnvironment(): boolean {
+  const nodeEnv =
+    typeof globalThis !== "undefined" && "process" in globalThis
+      ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV
+      : undefined;
+  return nodeEnv != null && nodeEnv !== "production";
+}
 
 const defaultProviderStyle: CSSProperties = {
   ["--ginger-primary-color" as string]: "#111827",
@@ -219,12 +231,10 @@ export function GingerProvider({
     const delay = retryDelayMs * 2 ** attempt;
     const timer = setTimeout(() => {
       retryCountRef.current = attempt + 1;
-      dispatch({ type: "MEDIA_CANPLAY" });
       const el = audioRef.current;
-      if (el) {
-        el.load();
-        dispatch({ type: "PLAY" });
-      }
+      if (!el) return;
+      el.load();
+      dispatch({ type: "PLAY" });
     }, delay);
     return () => clearTimeout(timer);
   }, [
@@ -292,12 +302,29 @@ export function GingerProvider({
   }, [pause, play]);
 
   const seek = useCallback(
-    (timeSeconds: number) => {
-      const el = audioRef.current;
-      if (!el) return;
+    (timeSeconds: number, durationHint?: number) => {
       if (!Number.isFinite(timeSeconds)) return;
-      el.currentTime = Math.max(0, timeSeconds);
-      onSeek?.(Math.max(0, timeSeconds));
+      const t = Math.max(0, timeSeconds);
+      const el = audioRef.current;
+      if (el) el.currentTime = t;
+      const elementDuration = el?.duration;
+      const duration =
+        typeof durationHint === "number" && Number.isFinite(durationHint)
+          ? durationHint
+          : typeof elementDuration === "number" &&
+              Number.isFinite(elementDuration) &&
+              elementDuration > 0
+            ? elementDuration
+            : stateRef.current.duration;
+      dispatch({
+        type: "MEDIA_TIME_UPDATE",
+        payload: {
+          currentTime: t,
+          duration,
+          bufferedFraction: stateRef.current.bufferedFraction,
+        },
+      });
+      onSeek?.(t);
     },
     [onSeek],
   );
@@ -326,12 +353,11 @@ export function GingerProvider({
     const el = audioRef.current;
     const threshold = prevRestartThresholdSeconds ?? 3;
     if (el && threshold > 0 && el.currentTime > threshold) {
-      el.currentTime = 0;
-      onSeek?.(0);
+      seek(0);
     } else {
       dispatch({ type: "PREV" });
     }
-  }, [prevRestartThresholdSeconds, onSeek]);
+  }, [prevRestartThresholdSeconds, seek]);
 
   const setRepeatMode = useCallback((mode: RepeatMode) => {
     dispatch({ type: "SET_REPEAT", payload: mode });
@@ -385,6 +411,8 @@ export function GingerProvider({
     dispatch({ type: "INIT", payload });
   }, []);
 
+  const [persistenceReady, setPersistenceReady] = useState(() => !hydrateOnMount || !persistence);
+
   useEffect(() => {
     if (!persistence || !hydrateOnMount) return;
     try {
@@ -413,14 +441,16 @@ export function GingerProvider({
         },
       });
     } catch (e) {
-      if (process.env.NODE_ENV !== "production") {
+      if (isDevEnvironment()) {
         console.warn("[@lucaismyname/ginger] persistence.get() threw during hydration:", e);
       }
+    } finally {
+      setPersistenceReady(true);
     }
   }, [hydrateOnMount, persistence]);
 
   useEffect(() => {
-    if (!persistence) return;
+    if (!persistence || !persistenceReady) return;
     try {
       persistence.set("ginger:volume", state.volume);
       persistence.set("ginger:muted", state.muted);
@@ -428,12 +458,13 @@ export function GingerProvider({
       persistence.set("ginger:repeatMode", state.repeatMode);
       persistence.set("ginger:currentIndex", state.currentIndex);
     } catch (e) {
-      if (process.env.NODE_ENV !== "production") {
+      if (isDevEnvironment()) {
         console.warn("[@lucaismyname/ginger] persistence.set() threw:", e);
       }
     }
   }, [
     persistence,
+    persistenceReady,
     state.volume,
     state.muted,
     state.playbackRate,
@@ -452,7 +483,7 @@ export function GingerProvider({
         seek(saved);
       }
     } catch (e) {
-      if (process.env.NODE_ENV !== "production") {
+      if (isDevEnvironment()) {
         console.warn("[@lucaismyname/ginger] persistence.get() threw during resume:", e);
       }
     }
@@ -468,7 +499,7 @@ export function GingerProvider({
       try {
         persistence.set(key, s.currentTime);
       } catch (e) {
-        if (process.env.NODE_ENV !== "production") {
+        if (isDevEnvironment()) {
           console.warn("[@lucaismyname/ginger] persistence.set() threw during resume save:", e);
         }
       }
@@ -860,6 +891,7 @@ export function GingerProvider({
         <div
           className={shellProps.className}
           style={shellProps.style}
+          data-ginger-root=""
           data-ginger-playback={shellProps["data-ginger-playback"]}
           dir={shellProps.dir}
         >
@@ -879,6 +911,7 @@ export function GingerProvider({
         childStyle && typeof childStyle === "object"
           ? { ...childStyle, ...shellProps.style }
           : shellProps.style,
+      "data-ginger-root": "",
       "data-ginger-playback": shellProps["data-ginger-playback"],
       dir: shellProps.dir,
     });
@@ -904,6 +937,7 @@ export function GingerProvider({
           </GingerTimeContext.Provider>
         </GingerPlaybackContext.Provider>
       </GingerDeclarativeMergeProvider>
+      <style>{GINGER_FOCUS_CSS}</style>
     </GingerLocaleProvider>
   );
 }

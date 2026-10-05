@@ -102,5 +102,34 @@ describe("GingerProvider integration", () => {
     expect(shell).toBeTruthy();
     expect(shell?.className).toContain("wrap");
     expect(shell?.getAttribute("data-ginger-playback")).toBeTruthy();
+    expect(shell?.getAttribute("data-ginger-root")).toBe("");
+  });
+
+  it("hydrates persisted volume before the first write", () => {
+    const store = new Map<string, unknown>([
+      ["ginger:volume", 0.25],
+      ["ginger:currentIndex", 1],
+    ]);
+    const writes: unknown[] = [];
+    const persistence = {
+      get: (key: string) => store.get(key),
+      set: (key: string, value: unknown) => {
+        if (key === "ginger:volume") writes.push(value);
+        store.set(key, value);
+      },
+    };
+    render(
+      <Ginger.Provider
+        initialTracks={tracks}
+        persistence={persistence}
+        hydrateOnMount
+        initialVolume={1}
+      >
+        <Title />
+      </Ginger.Provider>,
+    );
+    expect(writes.includes(1)).toBe(false);
+    expect(store.get("ginger:volume")).toBe(0.25);
+    expect(within(document.body).getByText("Song Two")).toBeTruthy();
   });
 });

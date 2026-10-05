@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { installMockWebAudio } from "../testing/mockWebAudio";
-import { attachLiveAnalyser, detachLiveAnalyser } from "./liveAudioGraph";
+import {
+  attachLiveAnalyser,
+  beginElementCrossfade,
+  detachLiveAnalyser,
+  endElementCrossfade,
+  setProcessingSlot,
+} from "./liveAudioGraph";
 
 const options = {
   fftSize: 1024,
@@ -81,7 +87,7 @@ describe("liveAudioGraph", () => {
     expect(context.state).toBe("running");
   });
 
-  it("disconnects the graph and closes the context when the last consumer detaches", () => {
+  it("keeps the context alive and routes the source to the destination when the last consumer detaches", () => {
     const webAudio = installMockWebAudio();
     restoreWebAudio = webAudio.restore;
 
@@ -91,13 +97,53 @@ describe("liveAudioGraph", () => {
 
     detachLiveAnalyser(element, attached.id);
 
-    // Source must have been disconnected at least once during teardown
     expect(context.sources[0]?.disconnectCalls).toBeGreaterThanOrEqual(1);
-    expect(context.closeCalls).toBe(1);
-    expect(context.state).toBe("closed");
+    expect(context.closeCalls).toBe(0);
+    expect(context.state).toBe("running");
+    expect(context.sources[0]?.connections).toEqual([context.destination]);
 
     attachLiveAnalyser(element, options);
-    expect(webAudio.contexts).toHaveLength(2);
+    expect(webAudio.contexts).toHaveLength(1);
+    expect(context.sources).toHaveLength(1);
+  });
+
+  it("composes eq and spatial slots without dropping either", () => {
+    const webAudio = installMockWebAudio();
+    restoreWebAudio = webAudio.restore;
+
+    const element = document.createElement("audio");
+    attachLiveAnalyser(element, options);
+    const context = webAudio.contexts[0]!;
+    const eq = context.createBiquadFilter();
+    const panner = context.createPanner();
+    setProcessingSlot(element, "eq", [eq]);
+    setProcessingSlot(element, "spatial", [panner]);
+
+    expect(context.sources[0]?.connections).toEqual([eq]);
+    expect(context.biquadFilters[0]?.connections).toEqual([panner]);
+    expect(context.panners[0]?.connections).toEqual([context.analysers[0]]);
+  });
+
+  it("crossfades on the existing context and restores the route without closing it", () => {
+    const webAudio = installMockWebAudio();
+    restoreWebAudio = webAudio.restore;
+
+    const main = document.createElement("audio");
+    const incoming = document.createElement("audio");
+    const attached = attachLiveAnalyser(main, options);
+    const context = webAudio.contexts[0]!;
+
+    const fade = beginElementCrossfade(main, incoming);
+    expect(fade.context).toBe(context);
+    expect(webAudio.contexts).toHaveLength(1);
+    expect(context.sources).toHaveLength(2);
+    expect(context.closeCalls).toBe(0);
+
+    endElementCrossfade(main);
+    expect(context.closeCalls).toBe(0);
+    expect(context.state).toBe("running");
+    detachLiveAnalyser(main, attached.id);
+    expect(context.sources[0]?.connections).toEqual([context.destination]);
   });
 
   it("throws a clear error when Web Audio is unavailable", () => {

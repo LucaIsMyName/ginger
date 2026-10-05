@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   attachLiveAnalyser,
   detachLiveAnalyser,
-  setProcessingChain,
+  setProcessingSlot,
 } from "../analyzer/liveAudioGraph";
 import { useGinger } from "../hooks/useGinger";
 
@@ -80,7 +80,7 @@ export function useGingerSpatialAudio(
     }
 
     if (!enabled) {
-      setProcessingChain(el, []);
+      setProcessingSlot(el, "spatial", []);
       pannerRef.current = null;
       contextRef.current = null;
       return;
@@ -105,7 +105,7 @@ export function useGingerSpatialAudio(
       pannerRef.current = panner;
       contextRef.current = context;
 
-      setProcessingChain(el, [panner]);
+      setProcessingSlot(el, "spatial", [panner]);
       detachLiveAnalyser(el, tempId);
 
       setError(null);
@@ -119,7 +119,7 @@ export function useGingerSpatialAudio(
     return () => {
       const element = audioRef.current;
       if (element) {
-        setProcessingChain(element, []);
+        setProcessingSlot(element, "spatial", []);
       }
       pannerRef.current = null;
       contextRef.current = null;

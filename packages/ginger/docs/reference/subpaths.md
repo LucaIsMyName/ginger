@@ -21,13 +21,15 @@ Waveform and analysis utilities for visualizations and offline audio analysis:
 
 ## `@lucaismyname/ginger/equalizer`
 
-Parametric EQ via `useGingerEqualizer`: inserts `BiquadFilterNode`s into the Web Audio graph for the active `Ginger` media element. Shares the same `AudioContext` as `useGingerLiveAnalyzer` and `useGingerSpatialAudio`.
+Parametric EQ via `useGingerEqualizer`: inserts `BiquadFilterNode`s into the `eq` processing slot of the shared Web Audio graph. That graph is the same `AudioContext` and `MediaElementAudioSourceNode` used by `useGingerLiveAnalyzer`, `useGingerSpatialAudio`, and crossfade. The context stays open for the life of the `<audio>` element.
+
+`setBandGain` and gain-only `setBands` updates write the filter gain directly. Changing frequency, type, or Q rebuilds the filter nodes. EQ and spatial audio compose (`eq` → `spatial` → `user`); neither replaces the other.
 
 ## `@lucaismyname/ginger/spatial`
 
 3D / HRTF spatial audio via `useGingerSpatialAudio`:
 
-- Inserts a `PannerNode` between the media element source and the output (same graph as EQ and live analyser).
+- Inserts a `PannerNode` in the `spatial` slot, after EQ filters and before any `user` slot nodes (same graph as EQ and the live analyser).
 - Options include `panningModel` (default `"HRTF"`), `distanceModel`, `refDistance`, `position`, and `listenerPosition`.
 - Imperative updates: `setSourcePosition`, `setListenerPosition`, `setPanningModel`.
 
@@ -52,7 +54,7 @@ Cue text has HTML tags stripped (typical WebVTT markup). For in-track **LRC** ly
 Multi-tab coordination with `BroadcastChannel` and `useGingerRemote`:
 
 - **Leader election** — PING / PONG, `LEADER_ANNOUNCE` with deterministic tie-break (lexicographic `tabId`).
-- **State sync** — Leader broadcasts `STATE_SNAPSHOT` payloads applied on followers with `init()` (same shape as `INIT`).
+- **State sync** — Leader broadcasts `STATE_SNAPSHOT` payloads (`INIT`, including `currentTime`) and a throttled `TIME_SYNC` (`currentTime` + `duration`) about once a second while playback position moves. Followers apply snapshots with `init()` and time updates with `seek()`.
 - **Single audio element** — Mount `Ginger.Player` only when `isLeader` is true so one tab owns playback.
 
 Options: `channelName` (default `"ginger-remote"`), `heartbeatMs`, `electionTimeoutMs`. Snapshots use `isShuffled: false` with the leader’s current `tracks` array so follower queue order matches without re-shuffling.
@@ -79,10 +81,10 @@ Web Audio–based **overlap** between outgoing and incoming media (distinct from
 
 | Export | Purpose |
 |--------|---------|
-| **`useGingerCrossfade`** | React hook: schedule fades against the active Ginger `<audio>` element and optional graph state. |
-| **`attachCrossfadeGraph`**, **`scheduleCrossfade`**, **`teardownCrossfadeGraph`** | Imperative helpers for wiring / tearing down nodes (`CrossfadeGraph`, `CrossfadeCurve` types). |
+| **`useGingerCrossfade`** | React hook: fade the active Ginger `<audio>` element into the next track. Returns `isCrossfading`, `crossfadeProgress`, and `error` when the shared graph cannot be attached. |
+| **`attachCrossfadeGraph`**, **`scheduleCrossfade`**, **`teardownCrossfadeGraph`** | Imperative helpers (`CrossfadeGraph`, `CrossfadeCurve`). Teardown disconnects the incoming element and restores the main route. It does **not** close the `AudioContext`. |
 
-Shares the same design constraint as EQ/spatial: processing attaches to the **current** media element graph; call **`teardownCrossfadeGraph`** when unmounting or switching strategies to avoid leaking `AudioContext` nodes.
+Crossfade uses the same long-lived context as EQ, spatial audio, and the live analyzer. The outgoing track runs through that processing chain; the incoming track is a second `<audio>` element gained straight to the destination for the length of the fade. While a fade is active, `Ginger.Player` ignores the outgoing element’s `ended` event so the queue advances once, when the ramp finishes. Call `teardownCrossfadeGraph` if you attached a graph yourself and need to abort it.
 
 ## `@lucaismyname/ginger/devtools`
 

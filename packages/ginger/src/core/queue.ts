@@ -26,18 +26,18 @@ export function findIndexByTrackIdentity(
   tracks: Track[],
   target: Track | null | undefined,
 ): number {
-  if (!target) return 0;
+  if (!target) return -1;
   const byRef = tracks.findIndex((t) => t === target);
   if (byRef !== -1) return byRef;
 
   const identity = trackIdentity(target);
-  if (!identity) return 0;
+  if (!identity || identity === "file:") return -1;
 
   const matches: number[] = [];
   for (let i = 0; i < tracks.length; i += 1) {
     if (trackIdentity(tracks[i]) === identity) matches.push(i);
   }
-  if (matches.length === 0) return 0;
+  if (matches.length === 0) return -1;
   if (matches.length === 1) return matches[0]!;
 
   const nodeEnv =
@@ -85,4 +85,20 @@ export function moveTrack(tracks: Track[], fromIndex: number, toIndex: number): 
 
 export function addNextTrack(tracks: Track[], currentIndex: number, track: Track): Track[] {
   return insertTrackAt(tracks, track, Math.max(0, Math.min(tracks.length, currentIndex + 1)));
+}
+
+/** Copy `updates` onto rows that share a track identity, preserving `existing` order and length. */
+export function replaceTrackFields(existing: Track[], updates: Track[]): Track[] {
+  const byIdentity = new Map<string, Track[]>();
+  for (const track of updates) {
+    const key = trackIdentity(track);
+    const list = byIdentity.get(key);
+    if (list) list.push(track);
+    else byIdentity.set(key, [track]);
+  }
+  return existing.map((track) => {
+    const list = byIdentity.get(trackIdentity(track));
+    if (!list || list.length === 0) return track;
+    return list.shift() ?? track;
+  });
 }

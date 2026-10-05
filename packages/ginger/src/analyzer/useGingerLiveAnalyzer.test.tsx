@@ -150,7 +150,8 @@ describe("useGingerLiveAnalyzer", () => {
     view.rerender(<AnalyzerHarness enabled={false} />);
 
     expect(context.sources[0]?.disconnectCalls).toBeGreaterThanOrEqual(1);
-    expect(context.closeCalls).toBe(1);
+    expect(context.closeCalls).toBe(0);
+    expect(context.sources[0]?.connections).toEqual([context.destination]);
     expect(screen.getByTestId("frequency-bin-count").textContent).toBe("0");
     expect(screen.getByTestId("sample-rate").textContent).toBe("0");
     expect(screen.getByTestId("time-length").textContent).toBe("0");

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import type { DisplayBaseProps, GingerState } from "../../types";
 
 export type QueueIndexProps = DisplayBaseProps & {
@@ -15,7 +15,7 @@ export function QueueIndex({
   empty,
   children,
 }: QueueIndexProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   const len = state.tracks.length;
   if (len === 0) {
     const node = empty ?? fallback ?? null;
@@ -46,7 +46,7 @@ export type QueueLengthProps = DisplayBaseProps & {
 };
 
 export function QueueLength({ className, style, fallback, empty, children }: QueueLengthProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   const value = String(state.tracks.length);
   if (state.tracks.length === 0) {
     const node = empty ?? fallback ?? null;
@@ -89,7 +89,7 @@ export function QueuePosition({
   empty,
   children,
 }: QueuePositionProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   const len = state.tracks.length;
   if (len === 0) {
     const node = empty ?? fallback ?? null;

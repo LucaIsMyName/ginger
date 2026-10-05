@@ -19,21 +19,14 @@ export function mergeDeclarativeQueue(
   }
 }
 
-/** Avoids redundant `SET_QUEUE` dispatches when merged queue is unchanged. */
+/** True when both queues carry the same tracks in the same order, including metadata fields. */
 export function tracksQueueShallowEqual(a: Track[], b: Track[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
     const x = a[i];
     const y = b[i];
     if (x === y) continue;
-    if (
-      x.title !== y.title ||
-      x.fileUrl !== y.fileUrl ||
-      (x.id ?? "") !== (y.id ?? "") ||
-      (x.artist ?? "") !== (y.artist ?? "")
-    ) {
-      return false;
-    }
+    if (JSON.stringify(x) !== JSON.stringify(y)) return false;
   }
   return true;
 }

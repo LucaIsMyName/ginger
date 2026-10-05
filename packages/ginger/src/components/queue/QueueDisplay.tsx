@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerMetadataState } from "../../context/GingerSplitContexts";
 import type { DisplayBaseProps } from "../../types";
 import { createTextDisplay } from "../current/createTextDisplay";
 
@@ -28,7 +28,7 @@ export function Artwork({
   unstyled = false,
   imgStyle,
 }: QueueArtworkProps) {
-  const state = useGingerState();
+  const state = useGingerMetadataState();
   const src = state.playlistMeta?.artworkUrl;
   if (!src) {
     const node = empty ?? fallback ?? null;

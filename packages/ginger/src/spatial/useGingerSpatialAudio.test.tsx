@@ -121,6 +121,9 @@ describe("useGingerSpatialAudio", () => {
 
     view.rerender(<SpatialHarness enabled={false} />);
 
-    expect(webAudio.contexts[0]!.closeCalls).toBeGreaterThanOrEqual(1);
+    expect(webAudio.contexts[0]!.closeCalls).toBe(0);
+    expect(webAudio.contexts[0]!.sources[0]?.connections).toEqual([
+      webAudio.contexts[0]!.destination,
+    ]);
   });
 });

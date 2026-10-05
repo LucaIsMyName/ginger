@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useGingerState } from "../../context/GingerSplitContexts";
+import { useGingerClockState } from "../../context/GingerSplitContexts";
 import { derivePlaybackUiState } from "../../internal/selectors";
 import type { DisplayBaseProps, GingerState, PlaybackUiState } from "../../types";
 
@@ -14,7 +14,7 @@ export function PlaybackState({
   empty: _empty,
   children,
 }: PlaybackStateProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   const value = derivePlaybackUiState(state);
   if (children)
     return (
@@ -44,7 +44,7 @@ export function ErrorMessage({
   live = "polite",
   children,
 }: ErrorMessageProps) {
-  const state = useGingerState();
+  const state = useGingerClockState();
   const value = state.errorMessage ?? "";
   if (!value) {
     const node = empty ?? fallback ?? null;

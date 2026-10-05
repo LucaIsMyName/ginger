@@ -1,6 +1,6 @@
 {
   "name": "@lucaismyname/ginger",
-  "version": "0.0.64",
+  "version": "0.0.65",
   "description": "A headless react audio-player component primitive",
   "type": "module",
   "sideEffects": false,

@@ -1,5 +1,6 @@
 import { type AudioHTMLAttributes, type CSSProperties, useEffect, useRef, useState } from "react";
 import { useGingerContext } from "../context/GingerContext";
+import { shouldIgnoreEnded } from "../internal/suppressNaturalEnded";
 
 export type GingerPlayerProps = {
   className?: string;
@@ -118,7 +119,11 @@ export function GingerPlayer({
       }}
       onSeeking={(e) => syncTime(e.currentTarget, true)}
       onSeeked={(e) => syncTime(e.currentTarget, true)}
-      onEnded={() => notifyEnded()}
+      onEnded={(e) => {
+        if (shouldIgnoreEnded(e.currentTarget)) return;
+        notifyEnded();
+      }}
+      onPlaying={() => dispatch({ type: "MEDIA_CANPLAY" })}
       onPlay={() => dispatch({ type: "MEDIA_PLAY" })}
       onPause={() => dispatch({ type: "MEDIA_PAUSE" })}
       onWaiting={() => dispatch({ type: "MEDIA_WAITING" })}

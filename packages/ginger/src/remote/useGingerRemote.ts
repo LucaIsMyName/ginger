@@ -53,7 +53,7 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
     electionTimeoutMs = 300,
   } = options;
 
-  const { state, init } = useGinger();
+  const { state, init, seek } = useGinger();
 
   const tabIdRef = useRef<string>("");
   if (tabIdRef.current === "") {
@@ -69,6 +69,10 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
 
   const initRef = useRef(init);
   initRef.current = init;
+  const seekRef = useRef(seek);
+  seekRef.current = seek;
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const channelRef = useRef<BroadcastChannel | null>(null);
   const knownTabsRef = useRef<Set<string>>(new Set());
@@ -207,8 +211,14 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
         }
         case "STATE_SNAPSHOT": {
           if (roleRef.current === "follower" && msg.tabId !== myId) {
+            const nodeEnv =
+              typeof globalThis !== "undefined" && "process" in globalThis
+                ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+                    ?.NODE_ENV
+                : undefined;
             if (
-              process.env.NODE_ENV !== "production" &&
+              nodeEnv != null &&
+              nodeEnv !== "production" &&
               !validateGingerInitPayloadDev(msg.snapshot)
             ) {
               console.warn(
@@ -217,6 +227,16 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
               break;
             }
             initRef.current(msg.snapshot);
+          }
+          break;
+        }
+        case "TIME_SYNC": {
+          if (
+            roleRef.current === "follower" &&
+            msg.tabId !== myId &&
+            Number.isFinite(msg.currentTime)
+          ) {
+            seekRef.current(msg.currentTime, msg.duration);
           }
           break;
         }
@@ -275,6 +295,7 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
 
   useEffect(() => {
     if (role !== "leader") return;
+    const latest = stateRef.current;
     const snapshot: GingerInitPayload = {
       tracks: state.tracks,
       currentIndex: state.currentIndex,
@@ -287,6 +308,7 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
       volume: state.volume,
       muted: state.muted,
       playbackRate: state.playbackRate,
+      currentTime: latest.currentTime,
     };
     post({
       type: "STATE_SNAPSHOT",
@@ -306,6 +328,23 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
     state.playbackRate,
     post,
   ]);
+
+  useEffect(() => {
+    if (role !== "leader") return;
+    let lastSent = stateRef.current.currentTime;
+    const id = setInterval(() => {
+      const latest = stateRef.current;
+      if (Math.abs(latest.currentTime - lastSent) < 0.5) return;
+      lastSent = latest.currentTime;
+      post({
+        type: "TIME_SYNC",
+        tabId: tabIdRef.current,
+        currentTime: latest.currentTime,
+        duration: latest.duration,
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [role, post]);
 
   const claimLeadership = useCallback(() => {
     clearElectionTimer();

@@ -10,10 +10,14 @@ For **import paths** of EQ, spatial, transcript, remote, crossfade, see [`subpat
 
 | Hook | When to use |
 |------|-------------|
-| **`useGinger()`** | Default choice: merged **playback + media** state, dispatch-free actions (`play`, `next`, `seek`, …), and `state` for full `GingerState`. |
-| **`useGingerState()`** | Same merged snapshot as `useGinger().state`, without actions — recomputes when **either** playback or media context changes. |
+| **`useGinger()`** | Default choice: merged **playback + media** state, actions (`play`, `next`, `seek`, …), and `state` for full `GingerState`. Also exposes `dispatch` as an escape hatch for reducer actions. Re-renders on time ticks. |
+| **`useGingerState()`** | Same merged snapshot as `useGinger().state`, without actions — recomputes when **either** playback or media context changes (including every time tick). |
+| **`useGingerMetadataState()`** | Playback plus volume/mute/rate, **without** subscribing to time ticks. Time fields on the returned state stay at idle values. Used by title, artwork, and queue-meta components. |
+| **`useGingerClockState()`** | Playback plus the time slice. Used by elapsed/duration rails and `PlaybackState`. Re-renders on time ticks. |
 | **`useGingerPlayback()`** | Only queue, pause, repeat, shuffle, navigation — **fewer re-renders** than full state when the subtree does not need `currentTime` / volume. |
-| **`useGingerMedia()`** | Only time, duration, buffer, volume, mute, rate, seek — **fewer re-renders** when the subtree does not need queue/repeat. |
+| **`useGingerMedia()`** | Only time, duration, buffer, volume, mute, rate, seek — **fewer re-renders** when the subtree does not need queue/repeat. Re-renders on time ticks. |
+| **`useGingerTime()`** | Time slice only: `currentTime`, `duration`, `bufferedFraction`, `isBuffering`, `errorMessage`. |
+| **`useGingerMediaControls()`** | Volume, mute, rate, and media actions. Does **not** re-render on time ticks. |
 
 Use **`gingerStateFromContexts(playback, media)`** or **`gingerStateFromContextValues(...)`** when composing tests or non-React code that already has both slices.
 
@@ -65,7 +69,9 @@ Root also exports **`parseLrc()`** for manual parsing.
 | Hook / helper | Purpose |
 |---------------|---------|
 | **`useGingerLiveAnalyzer()`** | Frequency/time-domain byte arrays updated on `requestAnimationFrame` (mutated buffers; use `frame` counter to re-render). |
-| **`attachLiveAnalyser` / `detachLiveAnalyser` / `setProcessingChain`** | Low-level graph wiring shared with EQ and spatial (see subpaths). |
+| **`attachLiveAnalyser` / `detachLiveAnalyser`** | Tap the shared media-element graph. Detaching the last analyser keeps the `AudioContext` open and routes the source to the destination. |
+| **`setProcessingSlot`** | Set the `eq`, `spatial`, or `user` slot. Slots concatenate in that order. |
+| **`setProcessingChain`** | Set the `user` slot only. Does not clear EQ or spatial. |
 
 ---
 
@@ -73,7 +79,7 @@ Root also exports **`parseLrc()`** for manual parsing.
 
 | Hook | Purpose |
 |------|---------|
-| **`useGingerSleepTimer()`** | Schedule stop or pause after a delay. |
+| **`useGingerSleepTimer()`** | Pause after `durationMs` and/or `stopAfterTracks` forward advances (next, natural end, repeat-all wrap). Previous and shuffle do not count. |
 | **`useGingerDebugLog()`** | Structured console logging of state transitions (dev tooling). |
 | **`useNextTrackPrefetch()`** | Hint next resource load for faster track changes. |
 | **`useGingerPlaybackHistory()`** | Append-only history of played tracks for “recently played” UIs. |
