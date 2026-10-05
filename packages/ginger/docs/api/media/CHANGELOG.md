@@ -4,6 +4,17 @@ All notable changes to `@lucaismyname/ginger` are documented here.
 
 Semver: patch/minor releases keep existing exports and types; new provider callbacks are optional only.
 
+## 0.0.68
+
+- **Crossfade:** Fades start only in the last `min(duration, trackLength)` seconds (fixes premature crossfade on long tracks when `duration` exceeds clip length). Fade ramps use the computed window length. Disabling crossfade or tearing down the poll effect aborts an in-flight session. Incoming track `play()` failures set `error` on `useGingerCrossfade`.
+- **Volume fade:** `useGingerVolumeFade` cancels in-flight `requestAnimationFrame` work on unmount.
+- **Reducer:** `TOGGLE_PAUSE` clears `errorMessage` when resuming (aligned with `PLAY`).
+- **Types:** `GingerContext` `seek` accepts optional `durationHint` (matches provider and remote time sync).
+- **Remote:** Leader snapshots include `isShuffled` for follower UI. Invalid `STATE_SNAPSHOT` payloads are ignored in production as well as development. JSDoc documents sync limits (coarse snapshots, throttled time sync, no error/buffering replication).
+- **Docs:** README crossfade example uses `isCrossfading` and `crossfadeProgress`. Typedoc includes the `tts` entry point; regenerated API HTML under `docs/api`.
+- **Tests:** `crossfadeTrigger` unit tests and `useGingerCrossfade` hook tests; reducer test for `TOGGLE_PAUSE`; volume-fade unmount test.
+- **Release checks:** Stricter bundle size caps (shared chunks, `client`, CJS). `check-docs-api` fails when committed Typedoc output is stale. Monorepo `verify` runs coverage thresholds and doc freshness; CI adds a Playwright job for the demo app.
+
 ## 0.0.67
 
 - **Provider:** Optional `onRetryExhausted` when `retryOnError` gives up; `PLAY` clears `errorMessage`; autoplay `NotAllowedError` maps to a distinct message and invokes `onPlayBlocked` when `play()` is rejected.
