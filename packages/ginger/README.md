@@ -64,7 +64,7 @@ For docs beyond this README, use the repository links below:
 - Streaming adapters: [`docs/guides/streaming-adapters.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/guides/streaming-adapters.md)
 - Components reference: [`docs/reference/components.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/components.md)
 - Hooks reference: [`docs/reference/hooks.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/hooks.md)
-- Subpath exports (waveform, EQ, spatial, transcript, remote, cast, crossfade, …): [`docs/reference/subpaths.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/subpaths.md)
+- Subpath exports (waveform, EQ, effects, spatial, transcript, remote, cast, crossfade, …): [`docs/reference/subpaths.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/subpaths.md)
 - Generated API docs: [`docs/api/index.html`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/api/index.html)
 
 ## Subpath Exports
@@ -75,6 +75,7 @@ Optional entrypoints keep the core bundle small. **Copy-paste starters** (full `
 - `@lucaismyname/ginger/testing`
 - `@lucaismyname/ginger/waveform`
 - `@lucaismyname/ginger/equalizer`
+- `@lucaismyname/ginger/effects`
 - `@lucaismyname/ginger/spatial`
 - `@lucaismyname/ginger/transcript`
 - `@lucaismyname/ginger/remote`
@@ -212,6 +213,56 @@ export function App() {
       <Ginger.Player />
       <Ginger.Control.PlayPause />
       <EqSliders />
+    </Ginger.Provider>
+  );
+}
+```
+
+#### <a id="subpath-starter-effects"></a> `@lucaismyname/ginger/effects`
+
+```tsx
+import { Ginger } from "@lucaismyname/ginger";
+import { useGingerEffects } from "@lucaismyname/ginger/effects";
+
+const tracks = [{ title: "Demo", fileUrl: "/your-audio.mp3" }];
+
+function EffectsRack() {
+  const { chain, setEffect, setEffectEnabled, error } = useGingerEffects({
+    chain: [
+      { id: "d1", type: "delay", time: 0.28, feedback: 0.35, mix: 0.3 },
+      { type: "chorus", rate: 1.2, depth: 0.004, mix: 0.25 },
+      { type: "reverb", decay: 2.2, mix: 0.22 },
+    ],
+  });
+  return (
+    <div>
+      {chain.map((effect, index) => (
+        <label key={effect.id ?? index}>
+          {effect.type}
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            defaultValue={"mix" in effect && typeof effect.mix === "number" ? effect.mix : 0.3}
+            onChange={(e) => setEffect(effect.id ?? index, { mix: Number(e.target.value) })}
+          />
+          <button type="button" onClick={() => setEffectEnabled(effect.id ?? index, false)}>
+            Bypass
+          </button>
+        </label>
+      ))}
+      {error && <p>{error}</p>}
+    </div>
+  );
+}
+
+export function App() {
+  return (
+    <Ginger.Provider initialTracks={tracks}>
+      <Ginger.Player crossOrigin="anonymous" />
+      <Ginger.Control.PlayPause />
+      <EffectsRack />
     </Ginger.Provider>
   );
 }
@@ -454,11 +505,15 @@ export function App() {
 
 ### Equalizer
 
-**Full shell:** [Equalizer starter](#subpath-starter-equalizer) (above). The EQ, spatial panner, live analyzer, and crossfade share one `AudioContext` and one `MediaElementAudioSourceNode` per element. Filters sit in the `eq` slot, before spatial and before analyser taps. `setBands` with the same frequencies updates gain without rebuilding the chain. The context stays open after you disable EQ so later playback is not silenced.
+**Full shell:** [Equalizer starter](#subpath-starter-equalizer) (above). The EQ, spatial panner, effects rack, live analyzer, and crossfade share one `AudioContext` and one `MediaElementAudioSourceNode` per element. Filters sit in the `eq` slot, before spatial, effects, and analyser taps. `setBands` with the same frequencies updates gain without rebuilding the chain. The context stays open after you disable EQ so later playback is not silenced.
+
+### Effects (`@lucaismyname/ginger/effects`)
+
+Inserts a serial rack into the `effects` slot (`eq` → `spatial` → `effects` → `user`). Built-ins: delay, reverb (generated stereo IR), distortion, phaser, chorus, and an analog-style octaver (rectifier / Chebyshev — not a clean pitch shifter). Any number of effects, including duplicates. `setEffect` writes params in place; add/remove/reorder rebuilds the slot. `registerEffect` and `{ type: "custom", create }` add more types. Local playback only — not Chromecast. **Full shell:** [Effects starter](#subpath-starter-effects).
 
 ### Spatial audio (`@lucaismyname/ginger/spatial`)
 
-Inserts an HRTF **`PannerNode`** into the `spatial` slot of the same Web Audio graph as the EQ and live analyser (one `MediaElementAudioSourceNode` per `<audio>`). EQ and spatial compose instead of replacing each other. **Full shell:** [Spatial starter](#subpath-starter-spatial). Use **`setListenerPosition`** and **`setPanningModel`** for runtime updates without rebuilding the graph.
+Inserts an HRTF **`PannerNode`** into the `spatial` slot of the same Web Audio graph as the EQ, effects rack, and live analyser (one `MediaElementAudioSourceNode` per `<audio>`). EQ, spatial, and effects compose instead of replacing each other. **Full shell:** [Spatial starter](#subpath-starter-spatial). Use **`setListenerPosition`** and **`setPanningModel`** for runtime updates without rebuilding the graph.
 
 ### Transcript (`@lucaismyname/ginger/transcript`)
 
@@ -1204,7 +1259,7 @@ Example:
 
 - **Buffered UI** — **`Ginger.Current.BufferRail`** shows load progress; **`Ginger.Current.TimeRail`** supports **`showBuffered`** to stack a buffered layer behind the played segment.
 
-- **Audio analyzers** — Live Web Audio data for real-time visuals (**`useGingerLiveAnalyzer`**, main package), parametric EQ (**`useGingerEqualizer`**, `@lucaismyname/ginger/equalizer`), **spatial / HRTF panning** (**`useGingerSpatialAudio`**, `@lucaismyname/ginger/spatial`), and whole-file grids for waveforms or spectrograms (**`useAudioFileAnalysis`** / **`analyzeAudioFile`**, `@lucaismyname/ginger/waveform`). See [Audio analyzers (visualizations)](#audio-analyzers-visualizations).
+- **Audio analyzers** — Live Web Audio data for real-time visuals (**`useGingerLiveAnalyzer`**, main package), parametric EQ (**`useGingerEqualizer`**, `@lucaismyname/ginger/equalizer`), **effects rack** (**`useGingerEffects`**, `@lucaismyname/ginger/effects`), **spatial / HRTF panning** (**`useGingerSpatialAudio`**, `@lucaismyname/ginger/spatial`), and whole-file grids for waveforms or spectrograms (**`useAudioFileAnalysis`** / **`analyzeAudioFile`**, `@lucaismyname/ginger/waveform`). See [Audio analyzers (visualizations)](#audio-analyzers-visualizations).
 
 - **Transcripts** — **SRT / WebVTT** parsing and sync (**`parseSrt`**, **`parseVtt`**, **`useGingerTranscriptSync`**, `@lucaismyname/ginger/transcript`); LRC / in-track lyrics remain **`useGingerLyricsSync`** and **`parseLrc()`** on the main package.
 
@@ -1251,7 +1306,7 @@ function Spectrum() {
 Important:
 
 - **CORS** — For cross-origin `fileUrl` values, set **`crossOrigin`** on **`Ginger.Player`** (for example `"anonymous"`) so the media element is usable with **`AudioContext`**.
-- **One `MediaElementAudioSourceNode` per `<audio>`** — The library reuses a single Web Audio graph per underlying element and keeps that `AudioContext` open for the element’s lifetime. Processing slots run **`eq` → `spatial` → `user`**, then analyser taps. Multiple instances of **`useGingerLiveAnalyzer`** attach extra **`AnalyserNode`**s; only one tap carries audio to **`destination`** so volume stays correct. Detaching the last tap routes the source straight to the destination.
+- **One `MediaElementAudioSourceNode` per `<audio>`** — The library reuses a single Web Audio graph per underlying element and keeps that `AudioContext` open for the element’s lifetime. Processing slots run **`eq` → `spatial` → `effects` → `user`**, then analyser taps. Multiple instances of **`useGingerLiveAnalyzer`** attach extra **`AnalyserNode`**s; only one tap carries audio to **`destination`** so volume stays correct. Detaching the last tap routes the source straight to the destination.
 - **Autoplay** — The **`AudioContext`** may start **`suspended`** until a user gesture; call **`resume()`** or start playback after interaction.
 - **Reading buffers** — `frequencyData` and `timeDomainData` are updated each animation frame while enabled; read them during render after **`frequencyBinCount > 0`** (they are backed by mutable buffers that the hook fills in a `requestAnimationFrame` loop). Because the array _reference_ never changes, use the returned **`frame`** counter as a `useMemo` / `useEffect` dependency to react to new data:
 
@@ -1543,6 +1598,7 @@ Additional entrypoints:
 - `@lucaismyname/ginger/testing`
 - `@lucaismyname/ginger/waveform`
 - `@lucaismyname/ginger/equalizer`
+- `@lucaismyname/ginger/effects`
 - `@lucaismyname/ginger/spatial`
 - `@lucaismyname/ginger/transcript`
 - `@lucaismyname/ginger/remote`

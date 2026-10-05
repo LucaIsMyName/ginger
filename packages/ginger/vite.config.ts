@@ -33,6 +33,7 @@ export default defineConfig({
         "waveform/index": resolve(__dirname, "src/waveform/index.ts"),
         "experimental-gapless/index": resolve(__dirname, "src/experimental-gapless/index.ts"),
         "equalizer/index": resolve(__dirname, "src/equalizer/index.ts"),
+        "effects/index": resolve(__dirname, "src/effects/index.ts"),
         "spatial/index": resolve(__dirname, "src/spatial/index.ts"),
         "transcript/index": resolve(__dirname, "src/transcript/index.ts"),
         "remote/index": resolve(__dirname, "src/remote/index.ts"),

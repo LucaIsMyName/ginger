@@ -6,6 +6,7 @@
     "src/testing/index.tsx",
     "src/waveform/index.ts",
     "src/equalizer/index.ts",
+    "src/effects/index.ts",
     "src/spatial/index.ts",
     "src/transcript/index.ts",
     "src/remote/index.ts",

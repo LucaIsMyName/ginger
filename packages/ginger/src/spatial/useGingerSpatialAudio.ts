@@ -46,7 +46,7 @@ function setListenerXYZ(context: AudioContext, x: number, y: number, z: number):
 /**
  * Inserts an HRTF `PannerNode` into the Web Audio graph for the active Ginger media element.
  *
- * Shares the same `AudioContext` as `useGingerEqualizer` / `useGingerLiveAnalyzer` — only one
+ * Shares the same `AudioContext` as `useGingerEqualizer` / `useGingerEffects` / `useGingerLiveAnalyzer` — only one
  * `MediaElementAudioSourceNode` per element is allowed by the browser.
  *
  * ```ts

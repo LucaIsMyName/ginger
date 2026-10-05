@@ -13,6 +13,7 @@ const RULES = [
   { match: (name) => name.startsWith("ginger-") && name.endsWith(".js"), maxBytes: 95 * 1024 },
   { match: (name) => name === "testing/index.js", maxBytes: 450 * 1024 },
   { match: (name) => name === "index.js", maxBytes: 8 * 1024 },
+  { match: (name) => name === "effects/index.js", maxBytes: 80 * 1024 },
   { match: (name) => name.endsWith("/index.js") && !name.includes("testing"), maxBytes: 25 * 1024 },
 ];
 

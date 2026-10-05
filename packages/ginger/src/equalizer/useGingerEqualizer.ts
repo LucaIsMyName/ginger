@@ -48,8 +48,8 @@ const DEFAULT_BANDS: EqualizerBand[] = [
  *
  * Each band is a `BiquadFilterNode` connected in series between the audio source and the
  * speakers. If `useGingerLiveAnalyzer` is also active, the EQ is inserted before the analyser
- * — both share the same `AudioContext` (the browser allows only one `MediaElementAudioSourceNode`
- * per element).
+ * — both share the same `AudioContext` as spatial and effects (the browser allows only one
+ * `MediaElementAudioSourceNode` per element).
  *
  * Available as a subpath export:
  * ```ts

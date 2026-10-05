@@ -2,6 +2,7 @@ import { useState } from "react";
 import { scan } from "react-scan";
 import { AlbumGrid } from "./examples/AlbumGrid";
 import { CurrentAndQueueGallery } from "./examples/CurrentAndQueueGallery";
+import { EffectsDemo } from "./examples/EffectsDemo";
 import { EqualizerDemo } from "./examples/EqualizerDemo";
 import { FilePeaksWaveform } from "./examples/FilePeaksWaveform";
 import { GlassmorphismDeck } from "./examples/GlassmorphismDeck";
@@ -35,6 +36,7 @@ const examples = [
   { id: "waveform-file", label: "Waveform (file peaks)", Component: FilePeaksWaveform },
   { id: "spatial", label: "Spatial audio", Component: SpatialAudioDemo },
   { id: "equalizer", label: "Equalizer", Component: EqualizerDemo },
+  { id: "effects", label: "Effects", Component: EffectsDemo },
   { id: "tts", label: "Text-to-Speech (TTS)", Component: TTSDemo },
   { id: "transcript", label: "Transcript (SRT)", Component: TranscriptDemo },
   { id: "podcast", label: "Podcast timeline", Component: PodcastTimeline },

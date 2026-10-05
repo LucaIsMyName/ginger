@@ -3,8 +3,8 @@
  * lifetime of that element: closing it would leave the element silent, because the
  * browser will not create a second MediaElementAudioSourceNode.
  *
- * Named processing slots (`eq`, `spatial`, `user`) are concatenated in that order.
- * An optional crossfade gain sits after the chain. Analyser consumers tap the tail.
+ * Named processing slots (`eq`, `spatial`, `effects`, `user`) are concatenated in that
+ * order. An optional crossfade gain sits after the chain. Analyser consumers tap the tail.
  */
 
 export type LiveAnalyserOptions = {
@@ -15,9 +15,21 @@ export type LiveAnalyserOptions = {
 };
 
 /** Fixed slot order. Earlier slots are closer to the media element source. */
-export const PROCESSING_SLOT_ORDER = ["eq", "spatial", "user"] as const;
+export const PROCESSING_SLOT_ORDER = ["eq", "spatial", "effects", "user"] as const;
 
 export type ProcessingSlot = (typeof PROCESSING_SLOT_ORDER)[number];
+
+/**
+ * A subgraph with a single input and output. Internal connections (feedback, dry/wet,
+ * LFO → AudioParam) are not disconnected when the outer graph rebuilds.
+ */
+export type ProcessingUnit = {
+  input: AudioNode;
+  output: AudioNode;
+};
+
+/** A slot entry is either a single node or an input/output unit. */
+export type ProcessingSlotNode = AudioNode | ProcessingUnit;
 
 type Consumer = {
   analyser: AnalyserNode;
@@ -34,7 +46,7 @@ type ElementEntry = {
   source: MediaElementAudioSourceNode;
   consumers: Map<number, Consumer>;
   nextId: number;
-  slots: Record<ProcessingSlot, AudioNode[]>;
+  slots: Record<ProcessingSlot, ProcessingUnit[]>;
   crossfade: CrossfadeNodes | null;
 };
 
@@ -45,16 +57,31 @@ function clampFftSize(n: number): number {
   return Math.min(32768, Math.max(32, p));
 }
 
-function emptySlots(): Record<ProcessingSlot, AudioNode[]> {
-  return { eq: [], spatial: [], user: [] };
+function emptySlots(): Record<ProcessingSlot, ProcessingUnit[]> {
+  return { eq: [], spatial: [], effects: [], user: [] };
 }
 
-function activeChain(entry: ElementEntry): AudioNode[] {
-  const nodes: AudioNode[] = [];
+function isProcessingUnit(value: ProcessingSlotNode): value is ProcessingUnit {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as AudioNode).connect !== "function" &&
+    "input" in value &&
+    "output" in value
+  );
+}
+
+export function toProcessingUnit(node: ProcessingSlotNode): ProcessingUnit {
+  if (isProcessingUnit(node)) return node;
+  return { input: node, output: node };
+}
+
+function activeChain(entry: ElementEntry): ProcessingUnit[] {
+  const units: ProcessingUnit[] = [];
   for (const slot of PROCESSING_SLOT_ORDER) {
-    nodes.push(...entry.slots[slot]);
+    units.push(...entry.slots[slot]);
   }
-  return nodes;
+  return units;
 }
 
 function disconnectNode(node: AudioNode): void {
@@ -66,15 +93,17 @@ function disconnectNode(node: AudioNode): void {
 }
 
 /**
- * Rebuild all graph connections from scratch.
- * Call after any structural change (add/remove consumer, change a processing slot, crossfade).
+ * Rebuild boundary connections only. When a unit's input !== output, internal
+ * wiring (feedback, dry/wet, LFO) is left intact.
  */
 function rebuildGraph(entry: ElementEntry): void {
   const { source, consumers, context, crossfade } = entry;
   const chain = activeChain(entry);
 
   disconnectNode(source);
-  for (const node of chain) disconnectNode(node);
+  for (const unit of chain) {
+    disconnectNode(unit.output);
+  }
   if (crossfade) disconnectNode(crossfade.outGain);
 
   for (const { analyser } of consumers.values()) {
@@ -86,13 +115,13 @@ function rebuildGraph(entry: ElementEntry): void {
   }
 
   if (chain.length > 0) {
-    source.connect(chain[0]!);
+    source.connect(chain[0]!.input);
     for (let i = 0; i < chain.length - 1; i++) {
-      chain[i]!.connect(chain[i + 1]!);
+      chain[i]!.output.connect(chain[i + 1]!.input);
     }
   }
 
-  const tail: AudioNode = chain.length > 0 ? chain[chain.length - 1]! : source;
+  const tail: AudioNode = chain.length > 0 ? chain[chain.length - 1]!.output : source;
   const output: AudioNode = crossfade ? crossfade.outGain : tail;
   if (crossfade) tail.connect(crossfade.outGain);
 
@@ -181,7 +210,7 @@ export function detachLiveAnalyser(element: HTMLAudioElement, id: number): void 
 
 /**
  * Replace one named processing slot. Other slots stay in place and are reconnected
- * in `eq` → `spatial` → `user` order. Pass an empty array to clear the slot.
+ * in `eq` → `spatial` → `effects` → `user` order. Pass an empty array to clear the slot.
  *
  * The AudioContext is not closed. Once a media element is captured, routing falls
  * back to source → destination so playback stays audible.
@@ -189,7 +218,7 @@ export function detachLiveAnalyser(element: HTMLAudioElement, id: number): void 
 export function setProcessingSlot(
   element: HTMLAudioElement,
   slot: ProcessingSlot,
-  nodes: AudioNode[],
+  nodes: ProcessingSlotNode[],
 ): void {
   if (typeof window === "undefined") return;
 
@@ -202,15 +231,15 @@ export function setProcessingSlot(
   }
 
   const entry = getOrCreateEntry(element);
-  entry.slots[slot] = nodes;
+  entry.slots[slot] = nodes.map(toProcessingUnit);
   rebuildGraph(entry);
 }
 
 /**
- * Replace the `user` slot. Does not clear `eq` or `spatial`.
+ * Replace the `user` slot. Does not clear `eq`, `spatial`, or `effects`.
  * Pass an empty array to remove only the user slot.
  */
-export function setProcessingChain(element: HTMLAudioElement, nodes: AudioNode[]): void {
+export function setProcessingChain(element: HTMLAudioElement, nodes: ProcessingSlotNode[]): void {
   setProcessingSlot(element, "user", nodes);
 }
 

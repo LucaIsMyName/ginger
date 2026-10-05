@@ -26,11 +26,17 @@ export type {
 export {
   attachLiveAnalyser,
   detachLiveAnalyser,
+  PROCESSING_SLOT_ORDER,
   setProcessingChain,
   setProcessingSlot,
 } from "./analyzer/liveAudioGraph";
 /** Low-level analyzer graph option type. */
-export type { LiveAnalyserOptions, ProcessingSlot } from "./analyzer/liveAudioGraph";
+export type {
+  LiveAnalyserOptions,
+  ProcessingSlot,
+  ProcessingSlotNode,
+  ProcessingUnit,
+} from "./analyzer/liveAudioGraph";
 
 /** Core state and provider public type exports. */
 export type {

@@ -2,7 +2,7 @@
 
 Hooks must run under **`Ginger.Provider`** unless documented otherwise (e.g. `createGingerStore` for non-React use).
 
-For **import paths** of EQ, spatial, transcript, remote, crossfade, see [`subpaths.md`](./subpaths.md). For generated signatures, open [`../api/index.html`](../api/index.html).
+For **import paths** of EQ, effects, spatial, transcript, remote, crossfade, see [`subpaths.md`](./subpaths.md). For generated signatures, open [`../api/index.html`](../api/index.html).
 
 ---
 
@@ -70,8 +70,8 @@ Root also exports **`parseLrc()`** for manual parsing.
 |---------------|---------|
 | **`useGingerLiveAnalyzer()`** | Frequency/time-domain byte arrays updated on `requestAnimationFrame` (mutated buffers; use `frame` counter to re-render). |
 | **`attachLiveAnalyser` / `detachLiveAnalyser`** | Tap the shared media-element graph. Detaching the last analyser keeps the `AudioContext` open and routes the source to the destination. |
-| **`setProcessingSlot`** | Set the `eq`, `spatial`, or `user` slot. Slots concatenate in that order. |
-| **`setProcessingChain`** | Set the `user` slot only. Does not clear EQ or spatial. |
+| **`setProcessingSlot`** | Set the `eq`, `spatial`, `effects`, or `user` slot. Slots concatenate in that order. Accepts `AudioNode`s or `{ input, output }` units. |
+| **`setProcessingChain`** | Set the `user` slot only. Does not clear EQ, spatial, or effects. |
 
 ---
 
@@ -102,6 +102,7 @@ Imported from **`@lucaismyname/ginger/<subpath>`** — see [`subpaths.md`](./sub
 | Module | Hook |
 |--------|------|
 | `equalizer` | **`useGingerEqualizer()`** |
+| `effects` | **`useGingerEffects()`** (+ `registerEffect`) |
 | `spatial` | **`useGingerSpatialAudio()`** |
 | `transcript` | **`useGingerTranscriptSync()`** (+ parsers) |
 | `remote` | **`useGingerRemote()`** |

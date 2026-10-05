@@ -64,7 +64,7 @@ For docs beyond this README, use the repository links below:
 - Streaming adapters: [`docs/guides/streaming-adapters.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/guides/streaming-adapters.md)
 - Components reference: [`docs/reference/components.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/components.md)
 - Hooks reference: [`docs/reference/hooks.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/hooks.md)
-- Subpath exports (waveform, EQ, spatial, transcript, remote, cast, crossfade, …): [`docs/reference/subpaths.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/subpaths.md)
+- Subpath exports (waveform, EQ, effects, spatial, transcript, remote, cast, crossfade, …): [`docs/reference/subpaths.md`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/reference/subpaths.md)
 - Generated API docs: [`docs/api/index.html`](https://github.com/lucaismyname/ginger/blob/main/packages/ginger/docs/api/index.html)
 
 ## Subpath Exports
@@ -75,6 +75,7 @@ Optional entrypoints keep the core bundle small. **Copy-paste starters** (full `
 - `@lucaismyname/ginger/testing`
 - `@lucaismyname/ginger/waveform`
 - `@lucaismyname/ginger/equalizer`
+- `@lucaismyname/ginger/effects`
 - `@lucaismyname/ginger/spatial`
 - `@lucaismyname/ginger/transcript`
 - `@lucaismyname/ginger/remote`
@@ -212,6 +213,56 @@ export function App() {
       <Ginger.Player />
       <Ginger.Control.PlayPause />
       <EqSliders />
+    </Ginger.Provider>
+  );
+}
+```
+
+#### <a id="subpath-starter-effects"></a> `@lucaismyname/ginger/effects`
+
+```tsx
+import { Ginger } from "@lucaismyname/ginger";
+import { useGingerEffects } from "@lucaismyname/ginger/effects";
+
+const tracks = [{ title: "Demo", fileUrl: "/your-audio.mp3" }];
+
+function EffectsRack() {
+  const { chain, setEffect, setEffectEnabled, error } = useGingerEffects({
+    chain: [
+      { id: "d1", type: "delay", time: 0.28, feedback: 0.35, mix: 0.3 },
+      { type: "chorus", rate: 1.2, depth: 0.004, mix: 0.25 },
+      { type: "reverb", decay: 2.2, mix: 0.22 },
+    ],
+  });
+  return (
+    <div>
+      {chain.map((effect, index) => (
+        <label key={effect.id ?? index}>
+          {effect.type}
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            defaultValue={"mix" in effect && typeof effect.mix === "number" ? effect.mix : 0.3}
+            onChange={(e) => setEffect(effect.id ?? index, { mix: Number(e.target.value) })}
+          />
+          <button type="button" onClick={() => setEffectEnabled(effect.id ?? index, false)}>
+            Bypass
+          </button>
+        </label>
+      ))}
+      {error && <p>{error}</p>}
+    </div>
+  );
+}
+
+export function App() {
+  return (
+    <Ginger.Provider initialTracks={tracks}>
+      <Ginger.Player crossOrigin="anonymous" />
+      <Ginger.Control.PlayPause />
+      <EffectsRack />
     </Ginger.Provider>
   );
 }
@@ -454,11 +505,15 @@ export function App() {
 
 ### Equalizer
 
-**Full shell:** [Equalizer starter](#subpath-starter-equalizer) (above). The EQ and `useGingerLiveAnalyzer` share the same `AudioContext` and can be used together. EQ filters are inserted before the analyser in the Web Audio graph.
+**Full shell:** [Equalizer starter](#subpath-starter-equalizer) (above). The EQ, spatial panner, effects rack, live analyzer, and crossfade share one `AudioContext` and one `MediaElementAudioSourceNode` per element. Filters sit in the `eq` slot, before spatial, effects, and analyser taps. `setBands` with the same frequencies updates gain without rebuilding the chain. The context stays open after you disable EQ so later playback is not silenced.
+
+### Effects (`@lucaismyname/ginger/effects`)
+
+Inserts a serial rack into the `effects` slot (`eq` → `spatial` → `effects` → `user`). Built-ins: delay, reverb (generated stereo IR), distortion, phaser, chorus, and an analog-style octaver (rectifier / Chebyshev — not a clean pitch shifter). Any number of effects, including duplicates. `setEffect` writes params in place; add/remove/reorder rebuilds the slot. `registerEffect` and `{ type: "custom", create }` add more types. Local playback only — not Chromecast. **Full shell:** [Effects starter](#subpath-starter-effects).
 
 ### Spatial audio (`@lucaismyname/ginger/spatial`)
 
-Inserts an HRTF **`PannerNode`** into the same Web Audio graph as the EQ and live analyser (one `MediaElementAudioSourceNode` per `<audio>`). **Full shell:** [Spatial starter](#subpath-starter-spatial). Use **`setListenerPosition`** and **`setPanningModel`** for runtime updates without rebuilding the graph.
+Inserts an HRTF **`PannerNode`** into the `spatial` slot of the same Web Audio graph as the EQ, effects rack, and live analyser (one `MediaElementAudioSourceNode` per `<audio>`). EQ, spatial, and effects compose instead of replacing each other. **Full shell:** [Spatial starter](#subpath-starter-spatial). Use **`setListenerPosition`** and **`setPanningModel`** for runtime updates without rebuilding the graph.
 
 ### Transcript (`@lucaismyname/ginger/transcript`)
 
@@ -468,7 +523,7 @@ Parse **SRT** and **WebVTT** captions and sync cues to playback time (podcasts, 
 
 ### Multi-tab sync (`@lucaismyname/ginger/remote`)
 
-Elects a **leader** tab via **`BroadcastChannel`** and pushes **`INIT`** snapshots to followers so queue and transport settings stay aligned. Mount **`Ginger.Player`** only on the leader so a single `<audio>` element plays. **Full shell:** [Remote starter](#subpath-starter-remote).
+Elects a **leader** tab via **`BroadcastChannel`** and pushes **`INIT`** snapshots to followers so queue, transport, and **`currentTime`** stay aligned. A throttled **`TIME_SYNC`** message updates follower playheads about once a second. Mount **`Ginger.Player`** only on the leader so a single `<audio>` element plays. **Full shell:** [Remote starter](#subpath-starter-remote).
 
 Snapshots send the current queue order with **`isShuffled: false`** so followers do not re-randomize; the visible order matches the leader. **`claimLeadership()`** requests leadership (lexicographically smaller tab IDs win conflicts).
 
@@ -486,7 +541,7 @@ Loads the **Google Cast Web Sender** (CAF), exposes **`useGingerCast`** for sess
 
 Adds a Web Audio crossfade graph for **overlap-based** transitions between outgoing and incoming media. This is distinct from the longer-term **gapless** work: crossfade overlaps two sources on purpose, while gapless aims for seamless adjacent track boundaries on a single playback path. **Full shell:** [Crossfade starter](#subpath-starter-crossfade).
 
-For lower-level integrations, the subpath also exports **`attachCrossfadeGraph`**, **`scheduleCrossfade`**, and **`teardownCrossfadeGraph`** plus the related graph/curve types. Like EQ and spatial audio, crossfade attaches to the active Ginger media graph and should be torn down when you unmount or switch playback strategies.
+For lower-level integrations, the subpath also exports **`attachCrossfadeGraph`**, **`scheduleCrossfade`**, and **`teardownCrossfadeGraph`** plus the related graph/curve types. Crossfade joins the shared media-element graph (the same context as EQ and the live analyzer) and uses a second `<audio>` element for the incoming track. **`teardownCrossfadeGraph`** disconnects that incoming element and does not close the `AudioContext`. The hook suppresses the outgoing track’s `ended` event until the fade commits a single queue advance. Attach failures are exposed as **`error`** on the hook result.
 
 ### Devtools (`@lucaismyname/ginger/devtools`)
 
@@ -812,7 +867,7 @@ Props:
 | `onPlayBlocked` | `() => void` | `undefined` | Called when `beforePlay` returns `false` |
 | `retryOnError` | `boolean \| GingerRetryConfig` | `undefined` | Auto-retry on transient media errors (e.g. network failures) with exponential backoff. `true` uses defaults (`maxRetries: 3`, `delayMs: 1500`). |
 | `persistence` | `{ get(key): unknown; set(key, value): void }` | `undefined` | Adapter for persisted playback settings and resume state |
-| `hydrateOnMount` | `boolean` | `false` | Hydrate persisted values into initial provider state |
+| `hydrateOnMount` | `boolean` | `false` | Hydrate persisted values on mount. The first save waits until that hydration has been applied |
 | `resumeOnTrackChange` | `boolean` | `false` | Restore/save per-track playback position |
 | `unstyled` | `boolean` | `false` | Skip provider default CSS variable/theme styles |
 | `asChild` | `boolean` | `false` | Merge shell props (`className`, `style`, `data-ginger-playback`, `dir`) onto the single child element instead of a wrapper `div` |
@@ -1091,9 +1146,9 @@ Declare queue entries in JSX instead of (or in addition to) the `initialTracks` 
 
 **`Ginger.Track`** accepts the same fields as [`Track`](#track). **`title`** is required; provide **`fileUrl`** or **`src`** (alias for `fileUrl`). Optional **`id`** keeps a stable identity when reordering JSX.
 
-The merge snapshot uses the provider’s latest **`initialTracks` props** (via an internal ref). If you change the queue only with **`setQueue()`** and not via props, a later sync from **`Ginger.Tracks`** can realign the queue with props + declarative children again—prefer updating **`initialTracks`** when mixing approaches, or rely on **`merge="replace"`** with only declarative children.
+The merge snapshot uses the provider’s latest **`initialTracks` props** (via an internal ref). Sync runs when those props or **`Ginger.Track`** children change (including artwork, chapters, and lyrics). Imperative **`insertTrack`**, **`removeTrack`**, and **`setQueue()`** are kept while the declarative list is unchanged. Changing which tracks are declared dispatches **`SET_QUEUE`**.
 
-**Shuffle:** each declarative sync dispatches **`SET_QUEUE`**, which clears shuffle state (same as imperative `setQueue`). Avoid heavy declarative churn while shuffle is on if you need shuffle to persist.
+**Shuffle:** a declarative membership or order change dispatches **`SET_QUEUE`**, which clears shuffle and resets timing. Field-only updates patch the current rows and leave shuffle and the playhead alone.
 
 ```tsx
 <Ginger.Provider initialTracks={[{ id: "a", title: "Intro", fileUrl: "/a.mp3" }]}>
@@ -1204,7 +1259,7 @@ Example:
 
 - **Buffered UI** — **`Ginger.Current.BufferRail`** shows load progress; **`Ginger.Current.TimeRail`** supports **`showBuffered`** to stack a buffered layer behind the played segment.
 
-- **Audio analyzers** — Live Web Audio data for real-time visuals (**`useGingerLiveAnalyzer`**, main package), parametric EQ (**`useGingerEqualizer`**, `@lucaismyname/ginger/equalizer`), **spatial / HRTF panning** (**`useGingerSpatialAudio`**, `@lucaismyname/ginger/spatial`), and whole-file grids for waveforms or spectrograms (**`useAudioFileAnalysis`** / **`analyzeAudioFile`**, `@lucaismyname/ginger/waveform`). See [Audio analyzers (visualizations)](#audio-analyzers-visualizations).
+- **Audio analyzers** — Live Web Audio data for real-time visuals (**`useGingerLiveAnalyzer`**, main package), parametric EQ (**`useGingerEqualizer`**, `@lucaismyname/ginger/equalizer`), **effects rack** (**`useGingerEffects`**, `@lucaismyname/ginger/effects`), **spatial / HRTF panning** (**`useGingerSpatialAudio`**, `@lucaismyname/ginger/spatial`), and whole-file grids for waveforms or spectrograms (**`useAudioFileAnalysis`** / **`analyzeAudioFile`**, `@lucaismyname/ginger/waveform`). See [Audio analyzers (visualizations)](#audio-analyzers-visualizations).
 
 - **Transcripts** — **SRT / WebVTT** parsing and sync (**`parseSrt`**, **`parseVtt`**, **`useGingerTranscriptSync`**, `@lucaismyname/ginger/transcript`); LRC / in-track lyrics remain **`useGingerLyricsSync`** and **`parseLrc()`** on the main package.
 
@@ -1251,7 +1306,7 @@ function Spectrum() {
 Important:
 
 - **CORS** — For cross-origin `fileUrl` values, set **`crossOrigin`** on **`Ginger.Player`** (for example `"anonymous"`) so the media element is usable with **`AudioContext`**.
-- **One `MediaElementAudioSourceNode` per `<audio>`** — The library reuses a single Web Audio graph per underlying element. Multiple instances of **`useGingerLiveAnalyzer`** attach extra **`AnalyserNode`**s as taps; only one tap carries audio to **`destination`** so volume stays correct.
+- **One `MediaElementAudioSourceNode` per `<audio>`** — The library reuses a single Web Audio graph per underlying element and keeps that `AudioContext` open for the element’s lifetime. Processing slots run **`eq` → `spatial` → `effects` → `user`**, then analyser taps. Multiple instances of **`useGingerLiveAnalyzer`** attach extra **`AnalyserNode`**s; only one tap carries audio to **`destination`** so volume stays correct. Detaching the last tap routes the source straight to the destination.
 - **Autoplay** — The **`AudioContext`** may start **`suspended`** until a user gesture; call **`resume()`** or start playback after interaction.
 - **Reading buffers** — `frequencyData` and `timeDomainData` are updated each animation frame while enabled; read them during render after **`frequencyBinCount > 0`** (they are backed by mutable buffers that the hook fills in a `requestAnimationFrame` loop). Because the array _reference_ never changes, use the returned **`frame`** counter as a `useMemo` / `useEffect` dependency to react to new data:
 
@@ -1543,6 +1598,7 @@ Additional entrypoints:
 - `@lucaismyname/ginger/testing`
 - `@lucaismyname/ginger/waveform`
 - `@lucaismyname/ginger/equalizer`
+- `@lucaismyname/ginger/effects`
 - `@lucaismyname/ginger/spatial`
 - `@lucaismyname/ginger/transcript`
 - `@lucaismyname/ginger/remote`

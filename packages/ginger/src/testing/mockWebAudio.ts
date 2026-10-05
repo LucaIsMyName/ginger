@@ -5,10 +5,14 @@ class MockAudioNode {
   readonly connectCalls: MockAudioNode[] = [];
   disconnectCalls = 0;
 
-  connect(node: MockAudioNode) {
-    this.connections.push(node);
-    this.connectCalls.push(node);
-    return node;
+  connect(destination?: unknown) {
+    if (destination && typeof destination === "object" && "connections" in destination) {
+      const node = destination as MockAudioNode;
+      this.connections.push(node);
+      this.connectCalls.push(node);
+      return node;
+    }
+    return destination;
   }
 
   disconnect(_node?: MockAudioNode) {
@@ -89,6 +93,58 @@ export class MockPannerNode extends MockAudioNode {
   readonly positionZ = new MockAudioParam();
 }
 
+export class MockDelayNode extends MockAudioNode {
+  readonly maxDelayTime: number;
+  readonly delayTime = { value: 0 };
+
+  constructor(maxDelayTime = 1) {
+    super();
+    this.maxDelayTime = maxDelayTime;
+  }
+}
+
+export class MockWaveShaperNode extends MockAudioNode {
+  curve: Float32Array | null = null;
+  oversample: OverSampleType = "none";
+}
+
+export class MockConvolverNode extends MockAudioNode {
+  buffer: AudioBuffer | null = null;
+  normalize = true;
+}
+
+export class MockOscillatorNode extends MockAudioNode {
+  type: OscillatorType = "sine";
+  readonly frequency = { value: 440 };
+  startCalls = 0;
+  stopCalls = 0;
+
+  start() {
+    this.startCalls += 1;
+  }
+
+  stop() {
+    this.stopCalls += 1;
+  }
+}
+
+function createMockAudioBuffer(
+  numberOfChannels: number,
+  length: number,
+  sampleRate: number,
+): AudioBuffer {
+  const channels = Array.from({ length: numberOfChannels }, () => new Float32Array(length));
+  return {
+    numberOfChannels,
+    length,
+    sampleRate,
+    duration: length / sampleRate,
+    getChannelData(channel: number) {
+      return channels[channel] ?? new Float32Array(length);
+    },
+  } as AudioBuffer;
+}
+
 export class MockAudioContext extends EventTarget {
   readonly destination = new MockAudioDestinationNode();
   readonly listener = new MockAudioListener() as unknown as AudioListener;
@@ -96,6 +152,11 @@ export class MockAudioContext extends EventTarget {
   readonly analysers: MockAnalyserNode[] = [];
   readonly biquadFilters: MockBiquadFilterNode[] = [];
   readonly panners: MockPannerNode[] = [];
+  readonly delays: MockDelayNode[] = [];
+  readonly waveShapers: MockWaveShaperNode[] = [];
+  readonly convolvers: MockConvolverNode[] = [];
+  readonly oscillators: MockOscillatorNode[] = [];
+  readonly buffers: AudioBuffer[] = [];
 
   sampleRate = 44_100;
   currentTime = 0;
@@ -132,6 +193,36 @@ export class MockAudioContext extends EventTarget {
     const gain = new MockGainNode();
     this.gains.push(gain);
     return gain as unknown as GainNode;
+  }
+
+  createDelay(maxDelayTime = 1) {
+    const delay = new MockDelayNode(maxDelayTime);
+    this.delays.push(delay);
+    return delay as unknown as DelayNode;
+  }
+
+  createWaveShaper() {
+    const shaper = new MockWaveShaperNode();
+    this.waveShapers.push(shaper);
+    return shaper as unknown as WaveShaperNode;
+  }
+
+  createConvolver() {
+    const convolver = new MockConvolverNode();
+    this.convolvers.push(convolver);
+    return convolver as unknown as ConvolverNode;
+  }
+
+  createOscillator() {
+    const oscillator = new MockOscillatorNode();
+    this.oscillators.push(oscillator);
+    return oscillator as unknown as OscillatorNode;
+  }
+
+  createBuffer(numberOfChannels: number, length: number, sampleRate: number) {
+    const buffer = createMockAudioBuffer(numberOfChannels, length, sampleRate);
+    this.buffers.push(buffer);
+    return buffer;
   }
 
   async resume() {

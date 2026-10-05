@@ -43,5 +43,5 @@ Requires a successful `npm run build` first if you want links to resolve against
 3. [`getting-started.md`](./getting-started.md).
 4. [`reference/components.md`](./reference/components.md) + [`reference/hooks.md`](./reference/hooks.md) while coding.
 5. [`guides/recipes.md`](./guides/recipes.md) for queue updates, autoplay, persistence.
-6. [`reference/subpaths.md`](./reference/subpaths.md) when you need waveform, EQ, spatial, transcript, remote, crossfade, devtools, or gapless probe.
+6. [`reference/subpaths.md`](./reference/subpaths.md) when you need waveform, EQ, effects, spatial, transcript, remote, crossfade, devtools, or gapless probe.
 7. [`guides/testing.md`](./guides/testing.md) if you add automated tests around Ginger.

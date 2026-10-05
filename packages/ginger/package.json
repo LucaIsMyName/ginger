@@ -1,6 +1,6 @@
 {
   "name": "@lucaismyname/ginger",
-  "version": "0.0.65",
+  "version": "0.0.66",
   "description": "A headless react audio-player component primitive",
   "type": "module",
   "sideEffects": false,
@@ -43,6 +43,11 @@
       "types": "./dist/equalizer/index.d.ts",
       "import": "./dist/equalizer/index.js",
       "require": "./dist/equalizer/index.cjs"
+    },
+    "./effects": {
+      "types": "./dist/effects/index.d.ts",
+      "import": "./dist/effects/index.js",
+      "require": "./dist/effects/index.cjs"
     },
     "./spatial": {
       "types": "./dist/spatial/index.d.ts",

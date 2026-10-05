@@ -16,6 +16,7 @@ The TypeDoc build uses [`typedoc.json`](../typedoc.json), which points its `read
 | `@lucaismyname/ginger/testing` | `renderGinger`, media event helpers, queue assertions |
 | `@lucaismyname/ginger/waveform` | Peaks, `analyzeAudioFile`, `useAudioPeaks`, … |
 | `@lucaismyname/ginger/equalizer` | Parametric EQ (`useGingerEqualizer`) |
+| `@lucaismyname/ginger/effects` | Effects rack (`useGingerEffects`, `registerEffect`) |
 | `@lucaismyname/ginger/spatial` | HRTF / panning (`useGingerSpatialAudio`) |
 | `@lucaismyname/ginger/transcript` | SRT/VTT parsers + `useGingerTranscriptSync` |
 | `@lucaismyname/ginger/remote` | Multi-tab sync (`useGingerRemote`) |

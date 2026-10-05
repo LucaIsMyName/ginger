@@ -74,6 +74,6 @@ The default entry is server-safe where hooks are not called on the server. For *
 - **Recipes** (queue updates, autoplay, persistence): [`guides/recipes.md`](./guides/recipes.md)
 - **Testing**: [`guides/testing.md`](./guides/testing.md)
 - **Accessibility**: [`guides/accessibility.md`](./guides/accessibility.md)
-- **Optional subpaths** (waveform, EQ, spatial, transcript, remote, crossfade, gapless probe): [`reference/subpaths.md`](./reference/subpaths.md)
+- **Optional subpaths** (waveform, EQ, effects, spatial, transcript, remote, crossfade, gapless probe): [`reference/subpaths.md`](./reference/subpaths.md)
 - **Component / hook lists**: [`reference/components.md`](./reference/components.md), [`reference/hooks.md`](./reference/hooks.md)
 - **Docs index** (folder layout, how to open TypeDoc): [`README.md`](./README.md)

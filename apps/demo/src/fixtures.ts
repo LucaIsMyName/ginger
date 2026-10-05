@@ -1,7 +1,7 @@
 import type { PlaylistMeta, Track } from "@lucaismyname/ginger";
 
 /**
- * Bundled same-origin MP3s under `public/samples/` so Web Audio (EQ, spatial) and
+ * Bundled same-origin MP3s under `public/samples/` so Web Audio (EQ, spatial, effects) and
  * `fetch` + `decodeAudioData` (file waveform peaks) work without CORS issues.
  *
  * Sources (Internet Archive / netlabels — Creative Commons; see public/samples/README.txt):

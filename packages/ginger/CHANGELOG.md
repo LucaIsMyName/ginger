@@ -2,6 +2,11 @@
 
 All notable changes to `@lucaismyname/ginger` are documented here.
 
+## 0.0.66
+
+- **Effects:** New `@lucaismyname/ginger/effects` subpath. `useGingerEffects` inserts a serial rack (delay, reverb, distortion, phaser, chorus, analog-style octaver) after spatial. `registerEffect` and `{ type: "custom", create }` add more types. Local playback only.
+- **Web Audio graph:** Processing slots are now `eq` → `spatial` → `effects` → `user`. Slots accept `{ input, output }` units so wet/dry and feedback graphs survive rebuilds. `setProcessingChain` still sets only the `user` slot.
+
 ## 0.0.65
 
 - **Queue:** `findIndexByTrackIdentity` returns `-1` when a track is missing, so shuffle remove and unshuffle no longer treat a miss as index `0`. Inserting while shuffled places the new track beside its neighbor in the canonical list.

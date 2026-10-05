@@ -1,18 +1,24 @@
 # Changelog
 
-All notable changes to `@lucaismyname/ginger` are documented here. The published copy is [`packages/ginger/CHANGELOG.md`](../../../CHANGELOG.md).
+All notable changes to `@lucaismyname/ginger` are documented here.
+
+## 0.0.66
+
+- **Effects:** New `@lucaismyname/ginger/effects` subpath. `useGingerEffects` inserts a serial rack (delay, reverb, distortion, phaser, chorus, analog-style octaver) after spatial. `registerEffect` and `{ type: "custom", create }` add more types. Local playback only.
+- **Web Audio graph:** Processing slots are now `eq` → `spatial` → `effects` → `user`. Slots accept `{ input, output }` units so wet/dry and feedback graphs survive rebuilds. `setProcessingChain` still sets only the `user` slot.
 
 ## 0.0.65
 
 - **Queue:** `findIndexByTrackIdentity` returns `-1` when a track is missing, so shuffle remove and unshuffle no longer treat a miss as index `0`. Inserting while shuffled places the new track beside its neighbor in the canonical list.
-- **`Ginger.Tracks`:** Declarative sync runs when the JSX queue or `initialTracks` change, not when imperative queue edits do. Field updates do not reset playback time.
-- **Persistence:** `hydrateOnMount` applies saved settings before the first write.
-- **Retry and buffering:** Retries no longer clear the error before `load()` recovers. `timeupdate` no longer clears `isBuffering`.
-- **Previous:** Restarting the current track updates reducer `currentTime` immediately.
-- **Sleep timer:** `stopAfterTracks` counts forward advances only.
-- **Web Audio:** The media-element `AudioContext` stays open. `setProcessingSlot` composes `eq` → `spatial` → `user`. `setBands` applies gain-only updates. Crossfade shares that graph, does not close it, and reports attach failures on `error`.
-- **UI:** Metadata components skip time-tick re-renders (`useGingerMetadataState`, `useGingerClockState`). Focus uses `--ginger-focus-ring`. Repeat sets `aria-pressed`.
-- **Remote:** Snapshots include `currentTime`, plus a throttled `TIME_SYNC`.
+- **`Ginger.Tracks`:** Declarative sync runs when the JSX queue or `initialTracks` change, not when imperative `insertTrack` / `setQueue` / `removeTrack` edits the reducer queue. Artwork, chapters, lyrics, and other track fields update in place and do not reset playback time. Reordering or adding declarative tracks still dispatches `SET_QUEUE` (which clears shuffle).
+- **Persistence:** With `hydrateOnMount`, saved volume, mute, rate, repeat, and index are applied before the first write, so defaults no longer overwrite storage on mount.
+- **Retry and buffering:** Error retries call `load()` without clearing the error first. `timeupdate` no longer clears `isBuffering`; `canplay` and `playing` do.
+- **Previous:** Restarting the current track above `prevRestartThresholdSeconds` updates reducer `currentTime` immediately.
+- **Sleep timer:** `stopAfterTracks` counts forward advances (next, natural end, repeat-all wrap). Previous, shuffle, and other index jumps do not count.
+- **Web Audio graph:** The `AudioContext` created for a media element stays open for that element’s lifetime, so detaching an analyzer, equalizer, or spatial panner no longer silences later playback. `setProcessingSlot` composes `eq`, then `spatial`, then `user`. `setProcessingChain` sets only the `user` slot. `useGingerEqualizer` and `useGingerSpatialAudio` can be mounted together. `setBands` applies gain-only updates without rebuilding filters.
+- **Crossfade:** Uses that shared context and a second `<audio>` element. Teardown does not close the context. The natural `ended` event is ignored for the duration of the fade, then the queue advances once. Attach failures are returned as `error` on `useGingerCrossfade`.
+- **UI:** Current-track metadata (title, artwork, queue labels) no longer re-renders on every time tick. Clocks and playback status still do. New hooks: `useGingerMetadataState` and `useGingerClockState`. Controls and playlist rows use `--ginger-focus-ring` on `:focus-visible`. `Ginger.Control.Repeat` sets `aria-pressed` (`false`, `true`, or `mixed`).
+- **Remote:** Leader snapshots include `currentTime`. Followers also receive a throttled `TIME_SYNC` message and seek to it.
 
 ## 0.0.48
 

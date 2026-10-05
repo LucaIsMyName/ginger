@@ -124,6 +124,56 @@ describe("liveAudioGraph", () => {
     expect(context.panners[0]?.connections).toEqual([context.analysers[0]]);
   });
 
+  it("composes eq, spatial, effects units, and user without wiping internals", () => {
+    const webAudio = installMockWebAudio();
+    restoreWebAudio = webAudio.restore;
+
+    const element = document.createElement("audio");
+    attachLiveAnalyser(element, options);
+    const context = webAudio.contexts[0]!;
+
+    const eq = context.createBiquadFilter();
+    const panner = context.createPanner();
+    const user = context.createGain();
+    const input = context.createGain();
+    const output = context.createGain();
+    const internal = context.createGain();
+    const feedback = context.createGain();
+
+    input.connect(internal);
+    internal.connect(output);
+    internal.connect(feedback);
+    feedback.connect(internal);
+
+    setProcessingSlot(element, "eq", [eq]);
+    setProcessingSlot(element, "spatial", [panner]);
+    setProcessingSlot(element, "effects", [{ input, output }]);
+    setProcessingSlot(element, "user", [user]);
+
+    // createGain order: user, input, output, internal, feedback
+    const mockUser = context.gains[0];
+    const mockOutput = context.gains[2];
+    const mockInternal = context.gains[3];
+    const mockFeedback = context.gains[4];
+
+    expect(mockInternal?.connections).toEqual([output, feedback]);
+    expect(mockFeedback?.connections).toEqual([internal]);
+    expect(context.sources[0]?.connections).toEqual([eq]);
+    expect(context.biquadFilters[0]?.connections).toEqual([panner]);
+    expect(context.panners[0]?.connections).toEqual([input]);
+    expect(mockOutput?.connections).toEqual([user]);
+    expect(mockUser?.connections).toEqual([context.analysers[0]]);
+
+    const laterEq = context.createBiquadFilter();
+    setProcessingSlot(element, "eq", [laterEq]);
+
+    expect(mockInternal?.connections).toEqual([output, feedback]);
+    expect(mockFeedback?.connections).toEqual([internal]);
+    expect(context.sources[0]?.connections).toEqual([laterEq]);
+    expect(context.biquadFilters[1]?.connections).toEqual([panner]);
+    expect(mockOutput?.connections).toEqual([user]);
+  });
+
   it("crossfades on the existing context and restores the route without closing it", () => {
     const webAudio = installMockWebAudio();
     restoreWebAudio = webAudio.restore;
