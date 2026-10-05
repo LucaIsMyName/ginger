@@ -13,6 +13,7 @@
     "src/cast/index.ts",
     "src/experimental-gapless/index.ts",
     "src/crossfade/index.ts",
+    "src/tts/index.ts",
     "src/devtools/index.ts"
   ],
   "entryPointStrategy": "resolve",

@@ -45,6 +45,11 @@ function makeTabId(): string {
  * ```ts
  * import { useGingerRemote } from "@lucaismyname/ginger/remote";
  * ```
+ *
+ * **Limitations:** Followers receive coarse `STATE_SNAPSHOT` updates plus `TIME_SYNC` roughly
+ * every second when drift exceeds ~0.5s — not sample-accurate lockstep. Media errors and
+ * buffering state are not replicated; only the leader should mount `Ginger.Player`. Queue order
+ * in snapshots is authoritative; `isShuffled` reflects the leader UI flag.
  */
 export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGingerRemoteResult {
   const {
@@ -216,14 +221,12 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
                 ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
                     ?.NODE_ENV
                 : undefined;
-            if (
-              nodeEnv != null &&
-              nodeEnv !== "production" &&
-              !validateGingerInitPayloadDev(msg.snapshot)
-            ) {
-              console.warn(
-                "[@lucaismyname/ginger] ignored STATE_SNAPSHOT: invalid GingerInitPayload",
-              );
+            if (!validateGingerInitPayloadDev(msg.snapshot)) {
+              if (nodeEnv != null && nodeEnv !== "production") {
+                console.warn(
+                  "[@lucaismyname/ginger] ignored STATE_SNAPSHOT: invalid GingerInitPayload",
+                );
+              }
               break;
             }
             initRef.current(msg.snapshot);
@@ -301,8 +304,8 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
       currentIndex: state.currentIndex,
       playlistMeta: state.playlistMeta,
       isPaused: state.isPaused,
-      /** Avoid `createInitialState` re-shuffling on followers; queue order is already canonical. */
-      isShuffled: false,
+      /** Queue order in `tracks` is canonical; flag mirrors leader UI state. */
+      isShuffled: state.isShuffled,
       repeatMode: state.repeatMode,
       playbackMode: state.playbackMode,
       volume: state.volume,
@@ -320,6 +323,7 @@ export function useGingerRemote(options: UseGingerRemoteOptions = {}): UseGinger
     state.tracks,
     state.currentIndex,
     state.isPaused,
+    state.isShuffled,
     state.repeatMode,
     state.playbackMode,
     state.playlistMeta,

@@ -68,6 +68,41 @@
 </tr>
 </tbody>
 </table>
+<h2 id="subpath-api-patterns" class="tsd-anchor-link">Subpath API patterns<a href="#subpath-api-patterns" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Subpath</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>./equalizer</code>, <code>./spatial</code>, <code>./effects</code></td>
+<td>Feature hooks with optional <code>enabled</code>; shared processing slot order</td>
+</tr>
+<tr>
+<td><code>./crossfade</code></td>
+<td>Hook + graph helpers; per-provider ended suppression</td>
+</tr>
+<tr>
+<td><code>./remote</code></td>
+<td>BroadcastChannel leader/follower; see security section in root README</td>
+</tr>
+<tr>
+<td><code>./cast</code></td>
+<td>Session bridge; user-supplied media URLs</td>
+</tr>
+<tr>
+<td><code>./waveform</code></td>
+<td><code>fetch</code>-based analysis; user-supplied URLs</td>
+</tr>
+</tbody>
+</table>
+<h2 id="security-and-trust" class="tsd-anchor-link">Security and trust<a href="#security-and-trust" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Ginger does not validate <code>fileUrl</code> values or remote <code>INIT</code> snapshots in production. Integrators should allowlist media origins, use CSP, and treat <code>@lucaismyname/ginger/remote</code> as same-origin trusted tabs only. Details: <a href="media/README.md#security-and-trust-boundaries">README — Security and trust boundaries</a>.</p>
+<h2 id="semver-and-compatibility" class="tsd-anchor-link">Semver and compatibility<a href="#semver-and-compatibility" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Public API changes follow semver: <strong>optional</strong> new <code>GingerProviderProps</code> fields and bug fixes ship in patch/minor releases; removing or renaming exports requires a major release. Re-exported helpers (<code>derivePlaybackUiState</code>, <code>parseLrc</code>) are part of the stable surface.</p>
 <h2 id="narrative-reference" class="tsd-anchor-link">Narrative reference<a href="#narrative-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
 <li>Release history: <a href="media/CHANGELOG.md"><code>CHANGELOG.md</code></a></li>
@@ -81,4 +116,4 @@
 
 <p>Output is written to <code>docs/api/</code>. The <code>readme</code> field in <code>typedoc.json</code> points at this file so the TypeDoc landing page stays aligned with the repo.
 Files under <code>docs/api/media/</code> are support assets for that generated output and should stay minimal when a hand-written canonical page already exists elsewhere in <code>docs/</code>.</p>
-</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#api-documentation"><span>API documentation</span></a><ul><li><a href="#import-map"><span>Import map</span></a></li><li><a href="#narrative-reference"><span>Narrative reference</span></a></li><li><a href="#regenerate-html"><span>Regenerate <wbr/>HTML</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@lucaismyname/ginger</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#api-documentation"><span>API documentation</span></a><ul><li><a href="#import-map"><span>Import map</span></a></li><li><a href="#subpath-api-patterns"><span>Subpath <wbr/>API patterns</span></a></li><li><a href="#security-and-trust"><span>Security and trust</span></a></li><li><a href="#semver-and-compatibility"><span>Semver and compatibility</span></a></li><li><a href="#narrative-reference"><span>Narrative reference</span></a></li><li><a href="#regenerate-html"><span>Regenerate <wbr/>HTML</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">@lucaismyname/ginger</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

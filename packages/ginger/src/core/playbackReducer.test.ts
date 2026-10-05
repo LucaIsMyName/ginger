@@ -271,6 +271,17 @@ describe("queue mutation actions", () => {
     expect(next.tracks[0]?.id).toBe("three");
   });
 
+  it("TOGGLE_PAUSE clears error when resuming", () => {
+    const state = {
+      ...createInitialState({ tracks, currentIndex: 0 }),
+      isPaused: true,
+      errorMessage: "blocked",
+    };
+    const next = gingerReducer(state, { type: "TOGGLE_PAUSE" });
+    expect(next.isPaused).toBe(false);
+    expect(next.errorMessage).toBeNull();
+  });
+
   it("add-next inserts immediately after current track", () => {
     const state = createInitialState({
       tracks,

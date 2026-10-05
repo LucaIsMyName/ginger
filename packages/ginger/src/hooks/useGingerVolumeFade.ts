@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGingerMedia } from "../context/GingerSplitContexts";
 
 export type UseGingerVolumeFadeOptions = {
@@ -29,6 +29,14 @@ export function useGingerVolumeFade(): UseGingerVolumeFadeResult {
 
   const rafRef = useRef<number>(0);
   const cancelledRef = useRef(false);
+
+  useEffect(
+    () => () => {
+      cancelledRef.current = true;
+      cancelAnimationFrame(rafRef.current);
+    },
+    [],
+  );
 
   const cancelFade = useCallback(() => {
     cancelAnimationFrame(rafRef.current);

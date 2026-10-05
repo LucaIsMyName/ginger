@@ -254,7 +254,9 @@ export function gingerReducer(state: GingerState, action: GingerAction): GingerS
     case "PAUSE":
       return { ...state, isPaused: true };
     case "TOGGLE_PAUSE":
-      return { ...state, isPaused: !state.isPaused };
+      return state.isPaused
+        ? { ...state, isPaused: false, errorMessage: null }
+        : { ...state, isPaused: true };
     case "SET_REPEAT":
       return { ...state, repeatMode: action.payload };
     case "CYCLE_REPEAT":

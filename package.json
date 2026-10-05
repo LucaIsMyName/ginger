@@ -18,7 +18,7 @@
     "format": "npm run format -w @lucaismyname/ginger",
     "format:apps": "npm run format -w ginger-demo && npm run format -w ginger-landing",
     "docs:api": "npm run docs:api -w @lucaismyname/ginger",
-    "verify": "npm run build && npm run test && npm run typecheck && npm run typecheck:apps && npm run lint && npm run lint:apps && npm run docs:api && npm run build -w ginger-demo && npm run build -w ginger-landing",
+    "verify": "npm run build && npm run test:coverage -w @lucaismyname/ginger && npm run typecheck && npm run typecheck:apps && npm run lint && npm run lint:apps && npm run docs:api -w @lucaismyname/ginger && npm run check-docs-api -w @lucaismyname/ginger && npm run build -w ginger-demo && npm run build -w ginger-landing",
     "dev": "npm run dev -w ginger-demo",
     "dev:landing": "npm run dev -w ginger-landing",
     "publish:lib": "cd packages/ginger && npm publish --access public",

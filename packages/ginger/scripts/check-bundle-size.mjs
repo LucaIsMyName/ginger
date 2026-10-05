@@ -8,24 +8,43 @@ import { fileURLToPath } from "node:url";
 
 const root = join(fileURLToPath(new URL(".", import.meta.url)), "..", "dist");
 
-/** Max uncompressed size per matching basename pattern (bytes). */
+/** Max uncompressed size per matching basename pattern (bytes). Applies to ESM `.js` and CJS `.cjs`. */
 const RULES = [
-  { match: (name) => name.startsWith("ginger-") && name.endsWith(".js"), maxBytes: 95 * 1024 },
-  { match: (name) => name === "testing/index.js", maxBytes: 450 * 1024 },
-  { match: (name) => name === "index.js", maxBytes: 8 * 1024 },
-  { match: (name) => name === "effects/index.js", maxBytes: 80 * 1024 },
-  { match: (name) => name.endsWith("/index.js") && !name.includes("testing"), maxBytes: 25 * 1024 },
+  { match: (name) => name.startsWith("ginger-") && (name.endsWith(".js") || name.endsWith(".cjs")), maxBytes: 95 * 1024 },
+  { match: (name) => name === "testing/index.js" || name === "testing/index.cjs", maxBytes: 450 * 1024 },
+  { match: (name) => name === "index.js" || name === "index.cjs", maxBytes: 8 * 1024 },
+  { match: (name) => name === "client.js" || name === "client.cjs", maxBytes: 12 * 1024 },
+  { match: (name) => name === "effects/index.js" || name === "effects/index.cjs", maxBytes: 80 * 1024 },
+  {
+    match: (name) =>
+      (name.endsWith("/index.js") || name.endsWith("/index.cjs")) && !name.includes("testing"),
+    maxBytes: 25 * 1024,
+  },
+  /** Shared Rollup chunks at dist root (hashed filenames). */
+  {
+    match: (name) =>
+      !name.includes("/") &&
+      (name.endsWith(".js") || name.endsWith(".cjs")) &&
+      name !== "index.js" &&
+      name !== "index.cjs" &&
+      name !== "client.js" &&
+      name !== "client.cjs",
+    maxBytes: 45 * 1024,
+  },
 ];
 
-async function walkJsFiles(dir, base = "") {
+async function walkBundleFiles(dir, base = "") {
   const entries = await readdir(dir, { withFileTypes: true });
   const out = [];
   for (const e of entries) {
     const rel = join(base, e.name).replace(/\\/g, "/");
     const full = join(dir, e.name);
     if (e.isDirectory()) {
-      out.push(...(await walkJsFiles(full, rel)));
-    } else if (e.name.endsWith(".js") && !e.name.endsWith(".map")) {
+      out.push(...(await walkBundleFiles(full, rel)));
+    } else if (
+      (e.name.endsWith(".js") || e.name.endsWith(".cjs")) &&
+      !e.name.endsWith(".map")
+    ) {
       out.push({ rel, full });
     }
   }
@@ -34,13 +53,15 @@ async function walkJsFiles(dir, base = "") {
 
 async function main() {
   const { statSync } = await import("node:fs");
-  const files = await walkJsFiles(root);
+  const files = await walkBundleFiles(root);
   const failures = [];
   let totalJs = 0;
 
   for (const { rel, full } of files) {
     const size = statSync(full).size;
-    totalJs += size;
+    if (rel.endsWith(".js")) {
+      totalJs += size;
+    }
     const rule = RULES.find((r) => r.match(rel));
     if (rule && size > rule.maxBytes) {
       failures.push(`${rel}: ${size} bytes (max ${rule.maxBytes})`);
@@ -49,7 +70,7 @@ async function main() {
 
   const totalCap = 650 * 1024;
   if (totalJs > totalCap) {
-    failures.push(`total JS in dist: ${totalJs} bytes (max ${totalCap})`);
+    failures.push(`total ESM JS in dist: ${totalJs} bytes (max ${totalCap})`);
   }
 
   if (failures.length > 0) {
@@ -57,7 +78,7 @@ async function main() {
     process.exit(1);
   }
   console.log(
-    `Bundle size OK (${files.length} JS files, ${totalJs} bytes total, caps: per-pattern + ${totalCap} total).`,
+    `Bundle size OK (${files.length} bundle files, ${totalJs} bytes ESM total, caps: per-pattern + ${totalCap} total).`,
   );
 }
 

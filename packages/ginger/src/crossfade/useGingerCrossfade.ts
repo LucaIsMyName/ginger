@@ -9,13 +9,14 @@ import {
   scheduleCrossfade,
   teardownCrossfadeGraph,
 } from "./crossfadeGraph";
+import { computeCrossfadeTrigger } from "./crossfadeTrigger";
 
 export type { CrossfadeCurve };
 
 export type UseGingerCrossfadeOptions = {
   /**
    * Duration of the crossfade in seconds.
-   * The hook begins the fade when `timeRemaining ≤ duration`.
+   * The hook begins the fade in the last `min(duration, trackLength)` seconds of the track.
    * @default 3
    */
   duration?: number;
@@ -143,6 +144,11 @@ export function useGingerCrossfade(
   // biome-ignore lint/correctness/useExhaustiveDependencies: abort is stable; intentional unmount-only cleanup
   useEffect(() => () => abort(), []);
 
+  // Abort active session when crossfade is disabled.
+  useEffect(() => {
+    if (!enabled) abort();
+  }, [enabled, abort]);
+
   // Keep the incoming element's volume/muted in sync with Ginger state so that
   // the user's volume control applies to the incoming track during the fade.
   useEffect(() => {
@@ -177,10 +183,9 @@ export function useGingerCrossfade(
       if (sessionRef.current) return;
 
       const { currentTime: ct, trackDuration: td } = mediaRef.current;
-      if (!(td > 0)) return;
-
-      const timeRemaining = td - ct;
-      if (timeRemaining > duration || timeRemaining <= 0) return;
+      const trigger = computeCrossfadeTrigger(ct, td, duration);
+      if (!trigger.shouldStart) return;
+      const fadeLengthSeconds = trigger.fadeLengthSeconds;
 
       const {
         tracks: tr,
@@ -232,13 +237,13 @@ export function useGingerCrossfade(
 
       incomingAudio.load();
       void incomingAudio.play().catch(() => {
-        // Autoplay may be blocked; gain ramps continue regardless.
+        setError("Incoming track playback was blocked or failed during crossfade");
       });
 
-      scheduleCrossfade(graph, timeRemaining, curve);
+      scheduleCrossfade(graph, fadeLengthSeconds, curve);
 
       const startTime = performance.now();
-      const fadeDurationMs = timeRemaining * 1000;
+      const fadeDurationMs = fadeLengthSeconds * 1000;
 
       setIsCrossfading(true);
       setCrossfadeProgress(0);
@@ -292,8 +297,19 @@ export function useGingerCrossfade(
 
     return () => {
       if (pollId != null) clearInterval(pollId);
+      abort();
     };
-  }, [enabled, isPaused, duration, curve, crossOrigin, audioRef, dispatch, endedSuppression]);
+  }, [
+    enabled,
+    isPaused,
+    duration,
+    curve,
+    crossOrigin,
+    audioRef,
+    dispatch,
+    endedSuppression,
+    abort,
+  ]);
 
   return { isCrossfading, crossfadeProgress, error };
 }

@@ -9,6 +9,13 @@
 ## Common Commands
 
 - Verify everything locally (same order as CI): `npm run verify`
+- **First-time / fresh clone:** build the library before running apps (`apps/*` resolve `@lucaismyname/ginger` from `packages/ginger/dist`, which is not committed):
+
+  ```bash
+  npm ci
+  npm run build -w @lucaismyname/ginger
+  ```
+
 - Demo app: `npm run dev`
 - Landing app: `npm run dev:landing`
 - E2E tests (demo): `npm run e2e -w ginger-demo`

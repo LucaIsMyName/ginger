@@ -450,13 +450,15 @@ const tracks = [
 ];
 
 function CrossfadeReadout() {
-  const { status, error } = useGingerCrossfade({
+  const { isCrossfading, crossfadeProgress, error } = useGingerCrossfade({
     enabled: true,
     duration: 1.2,
   });
   return (
     <div>
-      <p>Crossfade: {status}</p>
+      <p>
+        Crossfade: {isCrossfading ? `active (${Math.round(crossfadeProgress * 100)}%)` : "idle"}
+      </p>
       {error && <p role="alert">{error}</p>}
     </div>
   );

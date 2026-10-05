@@ -51,6 +51,23 @@ describe("useGingerVolumeFade", () => {
     });
     expect(result.current.cancelFade).toBeDefined();
   });
+
+  it("cancels in-flight fade on unmount", () => {
+    const rafSpy = vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb) => {
+      setTimeout(() => cb(performance.now()), 0);
+      return 1;
+    });
+    const cancelSpy = vi.spyOn(globalThis, "cancelAnimationFrame");
+
+    const { unmount } = renderHook(() => useGingerVolumeFade(), { wrapper: Wrapper });
+    act(() => {
+      unmount();
+    });
+
+    expect(cancelSpy).toHaveBeenCalled();
+    rafSpy.mockRestore();
+    cancelSpy.mockRestore();
+  });
 });
 
 describe("useGingerChapterProgress", () => {
